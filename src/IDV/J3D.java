@@ -70,6 +70,8 @@ public class J3D {
     private boolean rePlot = false;
     List<Polyline> polylines;
     private ColorPicker colorPicker;
+    private DrawMode drawMode = DrawMode.LINE;
+    private MeshView meshView;
 
     public J3D(double sizeX, double sizeY, double sizeZ) {
         this.sizeX = sizeX;
@@ -180,6 +182,12 @@ public class J3D {
 
         root.setOnContextMenuRequested(event -> rightClickMenu.show(scene, event.getScreenX(), event.getScreenY()));
 
+        scene.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                root.requestFocus();
+            }
+        });
 
         scene.setOnKeyPressed(me -> {
             switch (me.getCode()) {
@@ -421,7 +429,7 @@ public class J3D {
 
                 int offset = (x * (zArray.length - 1) + z ) * 8 / 2; // div 2 because we have u AND v in the list
 
-                // working
+
                 mesh.getFaces().addAll(bl, offset + 1, tl, offset + 0, tr, offset + 2);
                 mesh.getFaces().addAll(tr, offset + 2, br, offset + 3, bl, offset + 1);
 
@@ -437,13 +445,13 @@ public class J3D {
         material.setDiffuseMap(diffuseMap);
         material.setSpecularColor(Color.TRANSPARENT);
 
-        MeshView meshView = new MeshView(mesh);
+        meshView = new MeshView(mesh);
         meshView.setTranslateZ(- sizeZ/2);
         meshView.setTranslateY( 0.75 * sizeY);
         meshView.setTranslateX(- Arrays.stream(xArray).min().getAsDouble() * sizeX/cofX);
         meshView.setMaterial(material);
         meshView.setCullFace(CullFace.NONE);
-        meshView.setDrawMode(DrawMode.FILL);
+        meshView.setDrawMode(drawMode);
         meshView.setDepthTest(DepthTest.ENABLE);
         if(rePlot){
             plottedElements.getChildren().clear();
@@ -828,5 +836,9 @@ public class J3D {
 
     public void setColorPicker(ColorPicker colorPicker) {
         this.colorPicker = colorPicker;
+    }
+    public void setDrawMode(DrawMode drawMode) {
+        this.drawMode = drawMode;
+        meshView.setDrawMode(drawMode);
     }
 }

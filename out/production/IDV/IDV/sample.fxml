@@ -34,6 +34,7 @@
                                           <ToggleGroup fx:id="view3dgrp" />
                                        </toggleGroup>
                                     </ToggleButton>
+                                    <ChoiceBox fx:id="meshDrawMode" prefHeight="25.0" prefWidth="81.0" />
                                     <ToggleButton fx:id="series" mnemonicParsing="false" text="Series View" toggleGroup="$view3dgrp" />
                                     <ColorPicker fx:id="colorPicker" editable="true" prefHeight="26.0" prefWidth="64.0">
                                        <value>

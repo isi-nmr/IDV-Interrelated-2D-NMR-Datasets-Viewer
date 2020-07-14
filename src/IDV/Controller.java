@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -13,6 +14,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.*;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Line;
 
 import java.net.URL;
@@ -53,6 +55,8 @@ public class Controller implements Initializable {
     ListView meta_listview;
     @FXML
     ListView param_listview;
+    @FXML
+    ChoiceBox meshDrawMode;
 
     Chart chart = new Chart();
     ArrayList<PickResult> pickResults = new ArrayList<>();
@@ -139,7 +143,25 @@ public class Controller implements Initializable {
         mainPane_tab3.getChildren().add(line);
         mainPane_tab3.getChildren().add(heatmap_metabolite.getFrame());
         selectVoxel(heatmap_voxels, heatmap_metabolite, data);
-
+        String[] drawModes = new String[] {"FILL", "LINE"};
+        ObservableList<String> observableList_drawModes = FXCollections.observableArrayList(drawModes);
+        meshDrawMode.setItems(observableList_drawModes);
+        meshDrawMode.getSelectionModel().select(1);
+        meshDrawMode.disableProperty().bind(series.selectedProperty());
+        meshDrawMode.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                int selectedDrawMode = meshDrawMode.getSelectionModel().getSelectedIndex();
+                switch (selectedDrawMode) {
+                    case 0:
+                        j3D.setDrawMode(DrawMode.FILL);
+                        break;
+                    case 1:
+                        j3D.setDrawMode(DrawMode.LINE);
+                        break;
+                }
+            }
+        });
         ObservableList<String> observableList_param = FXCollections.observableArrayList(hLabels);
         ObservableList<String> observableList_meta =  FXCollections.observableArrayList(vLabels);
         meta_listview.setItems(observableList_meta);
