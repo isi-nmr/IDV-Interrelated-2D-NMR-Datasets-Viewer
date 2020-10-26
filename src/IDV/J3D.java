@@ -72,6 +72,9 @@ public class J3D {
     private ColorPicker colorPicker;
     private DrawMode drawMode = DrawMode.LINE;
     private MeshView meshView;
+    private double[] XArray;
+    private double[] ZArray;
+    private double[][] YArray;
 
     public J3D(double sizeX, double sizeY, double sizeZ) {
         this.sizeX = sizeX;
@@ -138,14 +141,17 @@ public class J3D {
         cube.getChildren().addAll(axis_label);
     }
 
-    public void setLabelSurface(double lowerBoundX, double higherBoundX, double lowerBoundY, double higherBoundY,double lowerBoundZ, double higherBoundZ) {
-        this.lowerBoundX = lowerBoundX;
-        this.higherBoundX = higherBoundX;
-        this.lowerBoundY = lowerBoundY;
-        this.higherBoundY = higherBoundY;
-        this.lowerBoundZ = lowerBoundZ;
-        this.higherBoundZ = higherBoundZ;
-        label = createlabelSurface();
+    public void setLabelSurface(double[] xArray, double[] zArray, double[][] yArray) {
+        double minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+        double maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+        double cofY = Math.abs(maxY - minY);
+        this.lowerBoundX = Arrays.stream(xArray).min().getAsDouble();
+        this.higherBoundX = Arrays.stream(xArray).max().getAsDouble();
+        this.lowerBoundY = minY - Math.abs(cofY/2);
+        this.higherBoundY = maxY + Math.abs(cofY/2);
+        this.lowerBoundZ = Arrays.stream(xArray).min().getAsDouble();;
+        this.higherBoundZ = Arrays.stream(zArray).max().getAsDouble();
+        label = createlabelSurface(xArray, zArray, yArray);
         plottedElements.getChildren().add(label);
     }
 
@@ -306,7 +312,7 @@ public class J3D {
         return label;
     }
 
-    private Group createlabelSurface() {
+    private Group createlabelSurface(double[] xArray, double[] zArray, double[][] yArray) {
         Group label = new Group();
         for(double y = higherBoundY; y > lowerBoundY; y=(y-((higherBoundY - lowerBoundY)/gradeY))) {
             textY = new Text(String.format("%.1f",y));
@@ -319,20 +325,20 @@ public class J3D {
 
             label.getChildren().addAll(textY);
         }
-        for(double z =  higherBoundZ; z >= lowerBoundZ; z-=(higherBoundZ - lowerBoundZ)/gradeZ) {
-            textZ = new Text(String.format("%.1f",z));
+        for(int z =  zArray.length; z >0; z-=(zArray.length)/gradeZ) {
+            textZ = new Text(String.format("%.1f",zArray[z-1]));
             textZ.autosize();
             textZ.setTranslateX(-textZ.getLayoutBounds().getWidth()-labelPad);
             textZ.setTranslateY(sizeY);
-            textZ.setTranslateZ(z*(sizeZ/(higherBoundZ - lowerBoundZ))-sizeZ/2);
+            textZ.setTranslateZ(z*(sizeZ/zArray.length)-sizeZ/2);
             textZ.setRotationAxis(Rotate.X_AXIS);
             textZ.setRotate(0);
             label.getChildren().addAll(textZ);
         }
-        for(double x =  higherBoundX; x >= lowerBoundX; x-=(higherBoundX - lowerBoundX)/gradeX) {
-            textX = new Text(String.format("%.1f",x));
+        for(int x =  xArray.length; x > 0; x-=(xArray.length)/gradeX) {
+            textX = new Text(String.format("%.1f",xArray[x-1]));
             textX.autosize();
-            textX.setTranslateX(x*(sizeX/(higherBoundX - lowerBoundX)) - textX.getLayoutBounds().getWidth()/2);
+            textX.setTranslateX(x*(sizeX/(xArray.length)) - textX.getLayoutBounds().getWidth()/2);
             textX.setTranslateY(sizeY);
             textX.setTranslateZ(-sizeZ/2 - labelPad);
             textX.setRotationAxis(Rotate.Y_AXIS);
@@ -383,6 +389,9 @@ public class J3D {
         rePlot = true;
     }
     public void plotSurface(double[] xArray, double[] zArray, double[][] yArray) {
+        this.XArray = xArray;
+        this.ZArray = zArray;
+        this.YArray = yArray;
         TriangleMesh mesh = new TriangleMesh();
         double minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
         double maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
@@ -393,7 +402,7 @@ public class J3D {
 
         for (int x = 0; x < xArray.length; x++) {
             for (int z = 0; z < zArray.length; z++) {
-                mesh.getPoints().addAll(((float) (sizeX/cofX*xArray[x])), (float) (float) -(0.5 * ((sizeY/cofY) * yArray[z][x] - ((minY*sizeY)/cofY))), ((float) (sizeZ/cofZ*zArray[z])));
+                mesh.getPoints().addAll(((float) (sizeX/cofX*xArray[x])), (float) (float) -(0.5 * ((sizeY/cofY) * yArray[z][x] - ((minY*sizeY)/cofY))), ((float) (sizeZ/cofZ*z)));
             }
         }
 
@@ -458,9 +467,7 @@ public class J3D {
             rePlot = false;
         }
         plottedElements.getChildren().add(meshView);
-        this.setLabelSurface(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
-                minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
-                Arrays.stream(zArray).min().getAsDouble(), Arrays.stream(zArray).max().getAsDouble());
+        this.setLabelSurface(xArray, zArray, yArray);
 
         rePlot = true;
     }
@@ -483,6 +490,99 @@ public class J3D {
         return wr;
 
     }
+    public void zoomX(int lowerBoundX, int upperBand) {
+        int lower = (int) ((lowerBoundX / (Arrays.stream(XArray).max().getAsDouble() - Arrays.stream(XArray).min().getAsDouble())) * XArray.length);
+        int upper = (int) ((upperBand / (Arrays.stream(XArray).max().getAsDouble() - Arrays.stream(XArray).min().getAsDouble())) * XArray.length);
+        XArray = Arrays.copyOfRange(XArray, lower,upper);
+        plotSurface(XArray, ZArray, YArray);
+    }
+    public void zoomX(double scale) {
+        int lower = (int) ((scale) * XArray.length);
+        int upper = (int) ((1-scale) * XArray.length);
+        double[] xArray = Arrays.copyOfRange(XArray, lower, upper);
+        double[][] yArray = YArray;
+        double[] zArray = ZArray;
+        TriangleMesh mesh = new TriangleMesh();
+        double minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+        double maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+        double cofY = Math.abs(maxY - minY);
+        double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
+        double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
+
+
+        for (int x = 0; x < xArray.length; x++) {
+            for (int z = 0; z < zArray.length; z++) {
+                mesh.getPoints().addAll(((float) (sizeX/cofX*xArray[x])), (float) (float) -(0.5 * ((sizeY/cofY) * yArray[z][x+lower] - ((minY*sizeY)/cofY))), ((float) (sizeZ/cofZ*z)));
+            }
+        }
+
+
+
+        for (float x = 0; x < xArray.length - 1; x++) {
+            for (float y = 0; y < zArray.length - 1; y++) {
+
+                float x0 = x / xArray.length;
+                float y0 = y / zArray.length;
+                float x1 = (x + 1) / xArray.length;
+                float y1 = (y + 1) / zArray.length;
+
+                mesh.getTexCoords().addAll( //
+                        x0, y0, // 0, top-left
+                        x0, y1, // 1, bottom-left
+                        x1, y1, // 2, top-right
+                        x1, y1 // 3, bottom-right
+                );
+
+
+            }
+        }
+
+        // faces
+        for (int x = 0; x < xArray.length - 1; x++) {
+            for (int z = 0; z < zArray.length - 1; z++) {
+
+                int tl = x * zArray.length + z; // top-left
+                int bl = x * zArray.length + z + 1; // bottom-left
+                int tr = (x + 1) * zArray.length + z; // top-right
+                int br = (x + 1) * zArray.length + z + 1; // bottom-right
+
+                int offset = (x * (zArray.length - 1) + z ) * 8 / 2; // div 2 because we have u AND v in the list
+
+
+                mesh.getFaces().addAll(bl, offset + 1, tl, offset + 0, tr, offset + 2);
+                mesh.getFaces().addAll(tr, offset + 2, br, offset + 3, bl, offset + 1);
+
+            }
+
+        }
+
+
+
+        Image diffuseMap = createImage(xArray.length, zArray.length, yArray);
+
+        PhongMaterial material = new PhongMaterial();
+        material.setDiffuseMap(diffuseMap);
+        material.setSpecularColor(Color.TRANSPARENT);
+
+        meshView = new MeshView(mesh);
+        meshView.setTranslateZ(- sizeZ/2);
+        meshView.setTranslateY( 0.75 * sizeY);
+        meshView.setTranslateX(- Arrays.stream(xArray).min().getAsDouble() * sizeX/cofX);
+        meshView.setMaterial(material);
+        meshView.setCullFace(CullFace.NONE);
+        meshView.setDrawMode(drawMode);
+        meshView.setDepthTest(DepthTest.ENABLE);
+        if(rePlot){
+            plottedElements.getChildren().clear();
+            rePlot = false;
+        }
+        plottedElements.getChildren().add(meshView);
+        this.setLabelSurface(xArray, zArray, yArray);
+
+        rePlot = true;
+    }
+
+
     private Color getColorForValue(double value) {
         double hueValue = 255 * (1 - value);
         return Color.hsb(hueValue, 1, 1);

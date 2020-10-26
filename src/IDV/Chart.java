@@ -34,8 +34,8 @@ public class Chart {
     private LineChart linechart;
 
     private XYChart.Series series = new XYChart.Series();
-    private double xAxislowerBound;
-    private double xAxisUpperBound;
+    private int xAxislowerBound;
+    private int xAxisUpperBound;
     private double pre_view_xL;
     private double pre_view_xU;
     private double pre_view_yL;
@@ -90,6 +90,9 @@ public class Chart {
         xAxis.setUpperBound(ini_view_xU);
         yAxis.setLowerBound(ini_view_yL);
         yAxis.setUpperBound(ini_view_yU);
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
     }
 
     private void restoreView() {
@@ -98,6 +101,9 @@ public class Chart {
         xAxis.setUpperBound(pre_view_xU);
         yAxis.setLowerBound(pre_view_yL);
         yAxis.setUpperBound(pre_view_yU);
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
     }
 
     public void plot(double[] xArray, double[] data, int selected) {
@@ -229,9 +235,15 @@ public class Chart {
         if (orin == 'r') {
             xAxis.setLowerBound(xAxis.getLowerBound() + 5);
             xAxis.setUpperBound(xAxis.getUpperBound() + 5);
+            xAxislowerBound = (int) xAxis.getLowerBound();
+            xAxisUpperBound = (int) xAxis.getUpperBound();
+//            Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         } else {
             xAxis.setLowerBound(xAxis.getLowerBound() - 5);
             xAxis.setUpperBound(xAxis.getUpperBound() - 5);
+            xAxislowerBound = (int) xAxis.getLowerBound();
+            xAxisUpperBound = (int) xAxis.getUpperBound();
+//            Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         }
     }
     private void doZoom(Rectangle zoomRect, LineChart<Number, Number> chart) {
@@ -259,10 +271,13 @@ public class Chart {
         xAxis.setUpperBound(xAxis.getLowerBound() + zoomRect.getWidth() / xAxisScale);
         yAxis.setUpperBound(yAxis.getUpperBound() + yOffset / yAxisScale);
         yAxis.setLowerBound(yAxis.getUpperBound() + zoomRect.getHeight() / yAxisScale);
-        xAxislowerBound = xAxis.getLowerBound();
-        xAxisUpperBound = xAxis.getUpperBound();
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         zoomRect.setWidth(0);
         zoomRect.setHeight(0);
+
+
     }
     public ContextMenu getContextMenu() {
         return contextMenu;

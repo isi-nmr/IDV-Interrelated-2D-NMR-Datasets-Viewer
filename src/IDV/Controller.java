@@ -11,6 +11,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.*;
@@ -21,6 +22,7 @@ import java.net.URL;
 import java.util.*;
 
 public class Controller implements Initializable {
+    public static J3D j3D;
     @FXML
     Tab tab1;
     @FXML
@@ -57,6 +59,8 @@ public class Controller implements Initializable {
     ListView param_listview;
     @FXML
     ChoiceBox meshDrawMode;
+    @FXML
+    Slider SliderZoomX;
 
     Chart chart = new Chart();
     ArrayList<PickResult> pickResults = new ArrayList<>();
@@ -65,18 +69,19 @@ public class Controller implements Initializable {
     private Integer colIndex = 0;
     private Integer rowIndex = 0;
 
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         JHEAT heatmap = new JHEAT(800,600);
 
         double[][] noise = createNoise();
         double[] xArray = new double[80];
-        double[] yArray = new double[40];
+        double[] yArray = new double[50];
         for (int x = 0; x < 80; x=x+1) {
             xArray[x] = x;
         }
-        for (int y = 0; y < 40; y=y+1) {
-            yArray[y] = y;
+        for (int y = 0; y < 50; y=y+1) {
+            yArray[y] = y+50;
         }
 
         heatmap.plot(noise);
@@ -88,7 +93,7 @@ public class Controller implements Initializable {
         chart.getChart().setTranslateX(1050);
         chart.getChart().setTranslateY(50);
         stackview_center_pane.getChildren().add(chart.getChart());
-        J3D j3D = new J3D(400,400,400);
+        j3D = new J3D(400,400,400);
         j3D.setColorPicker(colorPicker);
         colorPicker.disableProperty().bind(mesh.selectedProperty());
         mesh.setOnAction(event -> {
@@ -122,6 +127,12 @@ public class Controller implements Initializable {
         mesh.fire();
         double[][][][] data = createParam();
 
+        SliderZoomX.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                j3D.zoomX((Double) newValue);
+            }
+        });
 
 
         
@@ -222,10 +233,10 @@ public class Controller implements Initializable {
 
     }
     private double[][] createNoise() {
-        double[][] noiseArray = new double[40][80];
+        double[][] noiseArray = new double[50][80];
 
         for (int x = 0; x < 80; x=x+1) {
-            for (int y = 0; y < 40; y = y+1) {
+            for (int y = 0; y < 50; y = y+1) {
                 noiseArray[y][x] = (float) ( ((40-y)* Math.sin(Math.PI * 0.1 * y) + (80-x)*Math.sin(Math.PI * 0.1 * x))) ;
             }
         }
