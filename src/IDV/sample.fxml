@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.paint.*?>
-
-<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="IDV.Controller">
+<?import java.lang.*?>
+<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="IDV.Controller">
   <tabs>
     <Tab fx:id="tab1" text="3D View">
       <content>
@@ -29,19 +29,16 @@
                            <children>
                               <ToolBar prefHeight="57.0" prefWidth="600.0">
                                  <items>
-                                    <ToggleButton fx:id="mesh" mnemonicParsing="false" text="Mesh View">
-                                       <toggleGroup>
-                                          <ToggleGroup fx:id="view3dgrp" />
-                                       </toggleGroup>
-                                    </ToggleButton>
-                                    <ChoiceBox fx:id="meshDrawMode" prefHeight="25.0" prefWidth="81.0" />
-                                    <ToggleButton fx:id="series" mnemonicParsing="false" text="Series View" toggleGroup="$view3dgrp" />
-                                    <ColorPicker fx:id="colorPicker" editable="true" prefHeight="26.0" prefWidth="64.0">
-                                       <value>
-                                          <Color />
-                                       </value>
-                                    </ColorPicker>
-                                    <Slider fx:id="SliderZoomX" max="0.45" />
+                                    <ChoiceBox fx:id="dataChoicer" prefWidth="150.0">
+                                     <items>
+                                         <FXCollections fx:factory="observableArrayList">
+                                             <String fx:value="Data" />
+                                             <String fx:value="Fit" />
+                                             <String fx:value="Residue" />
+                                         </FXCollections>
+                                     </items>
+                                    </ChoiceBox>
+                                    <RadioButton fx:id="holdon" mnemonicParsing="false" text="Hold On" />
                                  </items>
                                  <opaqueInsets>
                                     <Insets bottom="10.0" top="10.0" />
@@ -83,6 +80,15 @@
                                  <items>
                                     <ToggleButton fx:id="logScale" mnemonicParsing="false" text="Logarithmic Scale" />
                                     <ToggleButton fx:id="datatips" mnemonicParsing="false" text="Data Tips" />
+                                     <ChoiceBox fx:id="dataChoicer2" prefWidth="150.0">
+                                         <items>
+                                             <FXCollections fx:factory="observableArrayList">
+                                                 <String fx:value="Data" />
+                                                 <String fx:value="Fit" />
+                                                 <String fx:value="Residue" />
+                                             </FXCollections>
+                                         </items>
+                                     </ChoiceBox>
                                  </items>
                                  <opaqueInsets>
                                     <Insets bottom="10.0" top="10.0" />
@@ -104,61 +110,5 @@
                </children></AnchorPane>
       </content>
     </Tab>
-      <Tab fx:id="tab3" text="Metabolite View">
-          <content>
-              <AnchorPane fx:id="anchorPane3" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                  <children>
-                      <BorderPane fx:id="borderPane3" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-
-                          <opaqueInsets>
-                              <Insets top="10.0" />
-                          </opaqueInsets>
-                     <top>
-                        <VBox prefHeight="32.0" prefWidth="600.0" BorderPane.alignment="CENTER">
-                           <children>
-                              <ToolBar prefHeight="31.0" prefWidth="600.0">
-                                 <padding>
-                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                                 </padding>
-                                 <items>
-                                    <ToggleButton fx:id="metabol_logScale" mnemonicParsing="false" text="Logarithmic Scale" />
-                                 </items>
-                              </ToolBar>
-                           </children>
-                           <padding>
-                              <Insets bottom="2.0" />
-                           </padding>
-                        </VBox>
-                     </top>
-                     <center>
-                        <Pane fx:id="mainPane_tab3" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                           <BorderPane.margin>
-                              <Insets left="20.0" />
-                           </BorderPane.margin></Pane>
-                     </center>
-                     <left>
-                        <VBox BorderPane.alignment="CENTER">
-                           <children>
-                              <HBox prefHeight="20.0" prefWidth="314.0" style="-fx-background-color: gainsboro;">
-                                 <children>
-                                    <Label prefHeight="18.0" prefWidth="139.0" text="Metabolites:" />
-                                    <Label prefHeight="18.0" prefWidth="171.0" text="Parameters:" />
-                                 </children>
-                                 <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </padding>
-                              </HBox>
-                              <HBox fillHeight="false">
-                                 <children>
-                                    <ListView fx:id="meta_listview" prefHeight="336.0" prefWidth="135.0" />
-                                    <ListView fx:id="param_listview" prefHeight="336.0" prefWidth="178.0" />
-                                 </children>
-                              </HBox>
-                           </children>
-                        </VBox>
-                     </left></BorderPane>
-                  </children></AnchorPane>
-          </content>
-      </Tab>
   </tabs>
 </TabPane>

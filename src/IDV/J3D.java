@@ -1,12 +1,9 @@
 package IDV;
 
 
-import javafx.concurrent.Service;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
-import javafx.scene.DepthTest;
-import javafx.scene.Group;
-import javafx.scene.SceneAntialiasing;
-import javafx.scene.SubScene;
+import javafx.scene.*;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -22,7 +19,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,13 +62,33 @@ public class J3D {
     private  double MAX_SCALE = 10;
     private final double MIN_SCALE = 0.1;
     private double[] zSeriesArray;
-    private List<Text> axis_label = new ArrayList<>();
-    private Text axis_label_x;
-    private Text axis_label_y;
-    private Text axis_label_z;
+    private Group axis_label = new Group();
+    private Text axis_label_x = new Text("X");
+    private Text axis_label_y = new Text("Y");
+    private Text axis_label_z = new Text("Z");
     private Text title;
     private double axis_label_fontSize = 20;
     private double title_fontSize = 100;
+    private double minY;
+    private double cofY;
+    private double maxY;
+
+    public Window getWindow() {
+        return window;
+    }
+
+    public void setWindow(Window window) {
+        this.window = window;
+    }
+
+    private Window window;
+
+
+
+    public ContextMenu getRightClickMenu() {
+        return rightClickMenu;
+    }
+
     private ContextMenu rightClickMenu = new ContextMenu();
     private boolean rePlot = false;
     List<Polyline> polylines;
@@ -99,7 +122,7 @@ public class J3D {
         cube.translateXProperty().bind(scene.widthProperty().divide(2.5));
         cube.translateYProperty().bind(scene.heightProperty().divide(2.5));
 
-        createAxisLabel();
+//        createAxisLabel();
 
         mouseTool();
         this.getCube().getChildren().addAll(plottedElements);
@@ -111,23 +134,23 @@ public class J3D {
         title = new Text("Title");
         root.getChildren().add(title);
     }
-    private void createAxisLabel() {
+    private Group createAxisLabel() {
         Font font = Font.font("Verdana", FontWeight.EXTRA_BOLD, axis_label_fontSize);
 
-        axis_label_x = new Text("X");
+
         axis_label_x.setTranslateY(sizeY);
         axis_label_x.setTranslateX(- 150);
         axis_label_x.setFont(font);
         axis_label_x.setRotationAxis(Rotate.Y_AXIS);
         axis_label_x.setRotate(90);
 
-        axis_label_z = new Text("Z");
+
         axis_label_z.setTranslateY(sizeY);
         axis_label_z.setTranslateX(sizeX/2);
         axis_label_z.setTranslateZ(-sizeZ/2 - 100);
         axis_label_z.setFont(font);
 
-        axis_label_y = new Text("Y");
+
         axis_label_y.setTranslateY(sizeY/2);
         axis_label_y.setTranslateX(-150);
         axis_label_y.setTranslateZ(sizeZ/2 );
@@ -135,10 +158,13 @@ public class J3D {
         axis_label_y.setRotationAxis(Rotate.Z_AXIS);
         axis_label_y.setRotate(-90);
 
-        axis_label.add(axis_label_z);
-        axis_label.add(axis_label_x);
-        axis_label.add(axis_label_y);
-        cube.getChildren().addAll(axis_label);
+        Group group = new Group();
+        group.getChildren().add(axis_label_z);
+        group.getChildren().add(axis_label_x);
+        group.getChildren().add(axis_label_y);
+
+
+        return group;
     }
 
     public void setLabelSurface(double[] xArray, double[] zArray, double[][] yArray) {
@@ -185,6 +211,40 @@ public class J3D {
         MenuItem initialView = new MenuItem("Initial View");
         initialView.setOnAction(event -> {rotateX.setAngle(20); rotateY.setAngle(-45);} );
         rightClickMenu.getItems().add(initialView);
+
+        MenuItem saveImg = new MenuItem("Save as an Image");
+        saveImg.setOnAction(event -> {
+            try
+            {
+                FileChooser fileChooser = new FileChooser();
+
+                //Set extension filter for text files
+                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PNG files (*.png)", "*.png");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+                //Show save file dialog
+                File file = fileChooser.showSaveDialog(window);
+
+                if (file != null) {
+                    SnapshotParameters sp = new SnapshotParameters();
+                    sp.setTransform(javafx.scene.transform.Transform.scale(4, 4));
+                    WritableImage image3 = this.getScene().snapshot(sp, null);
+
+                    BufferedImage bufImageARGB3 = SwingFXUtils.fromFXImage(image3, null);
+                    BufferedImage bufImageRGB3 = new BufferedImage(bufImageARGB3.getWidth(), bufImageARGB3.getHeight(), BufferedImage.OPAQUE);
+
+                    Graphics2D graphics3 = bufImageRGB3.createGraphics();
+                    graphics3.drawImage(bufImageARGB3, 0, 0, null);
+                    ImageIO.write(bufImageRGB3,"png", file);
+                }
+
+            }
+            catch(Exception exception)
+            {
+                //code
+            }
+        });
+        rightClickMenu.getItems().add(saveImg);
 
         root.setOnContextMenuRequested(event -> rightClickMenu.show(scene, event.getScreenX(), event.getScreenY()));
 
@@ -297,18 +357,22 @@ public class J3D {
             label.getChildren().addAll(textZ);
             zindx++;
         }
+
+        double xi = (higherBoundX - lowerBoundX);
         for(double x =  higherBoundX; x >= lowerBoundX; x-=(higherBoundX - lowerBoundX)/gradeX) {
             textX = new Text(String.format("%.1f",x));
             textX.autosize();
 //            textX.setTranslateX(-x*(sizeX/(higherBoundX - lowerBoundX))+(higherBoundX)*(sizeX/(higherBoundX - lowerBoundX))- textX.getLayoutBounds().getWidth()/2);
-            textX.setTranslateX(x*(sizeX/(higherBoundX - lowerBoundX)) - textX.getLayoutBounds().getWidth()/2);
+            textX.setTranslateX((xi*(sizeX/(higherBoundX - lowerBoundX))  - textX.getLayoutBounds().getWidth()/2));
+            xi-=(higherBoundX - lowerBoundX)/gradeX;
             textX.setTranslateY(sizeY);
             textX.setTranslateZ(-sizeZ/2 - labelPad);
             textX.setRotationAxis(Rotate.Y_AXIS);
             textX.setRotate(90);
             label.getChildren().addAll(textX);
         }
-
+        axis_label = createAxisLabel();
+        label.getChildren().addAll(axis_label);
         return label;
     }
 
@@ -348,11 +412,92 @@ public class J3D {
 
         return label;
     }
+    public void plotHoldon(double[] xArray, double[] zArray, double[][] yArray, Color color){
+//        if ( minY > Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble() ||
+//        maxY < Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble()) {
+//            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+//            maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+//            cofY = Math.abs(maxY - minY);
+//        }
+        double numOfSample = xArray.length;
+        double numOfVector = zArray.length;
+        polylines = new ArrayList<>();
+        Group polygrp = new Group();
+        for (int vector = 0; vector < numOfVector; vector++) {
+            Double[]  Data = new Double[(int) (2 * numOfSample)];
+            for(int i=0; i < 2*numOfSample; i=i+2) {
+                Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
+                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+//                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
 
-    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray) {
-        double minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
-        double maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
-        double cofY = Math.abs(maxY - minY);
+            }
+            Polyline polyline = new Polyline();
+            polyline.setStroke(color);
+            polyline.setOpacity(50);
+            polyline.setTranslateY(0.75 * sizeY);
+            polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector)-((1e-2)* Math.random()));
+            polyline.getPoints().addAll(Data);
+            polyline.setStrokeWidth(0.5);
+            polylines.add(polyline);
+        }
+        polygrp.getChildren().addAll(polylines);
+        plottedElements.getChildren().addAll(polygrp);
+    }
+
+    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray, boolean holdon, Color color, char s) {
+        if (holdon) {
+            plotHoldon(xArray, zArray, yArray, color);}else{
+            if (s != 's'){
+            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+            maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+            cofY = Math.abs(maxY - minY);
+        }
+            double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
+            double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
+            double numOfSample = xArray.length;
+            double numOfVector = zArray.length;
+            polylines = new ArrayList<>();
+            Group polygrp = new Group();
+            for (int vector = 0; vector < numOfVector; vector++) {
+                Double[]  Data = new Double[(int) (2 * numOfSample)];
+                for(int i=0; i < 2*numOfSample; i=i+2) {
+                    Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
+                    Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+//                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
+
+                }
+                Polyline polyline = new Polyline();
+//            polyline.strokeProperty().bind(colorPicker.valueProperty());
+                polyline.setStroke(color);
+                polyline.setTranslateY(0.75 * sizeY);
+                polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
+                polyline.getPoints().addAll(Data);
+                polyline.setStrokeWidth(0.5);
+                polylines.add(polyline);
+            }
+            polygrp.getChildren().addAll(polylines);
+
+            if(rePlot){
+                plottedElements.getChildren().clear();
+
+                rePlot = false;
+            }
+
+            plottedElements.getChildren().addAll(polygrp);
+
+            this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
+                    minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
+                    zArray);
+
+            rePlot = true;}
+    }
+
+    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray, boolean holdon, Color color) {
+        if (holdon) {
+            plotHoldon(xArray, zArray, yArray, color);}else{
+        minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+        maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+        cofY = Math.abs(maxY - minY);
         double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
         double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
         double numOfSample = xArray.length;
@@ -368,7 +513,8 @@ public class J3D {
 
             }
             Polyline polyline = new Polyline();
-            polyline.strokeProperty().bind(colorPicker.valueProperty());
+//            polyline.strokeProperty().bind(colorPicker.valueProperty());
+            polyline.setStroke(color);
             polyline.setTranslateY(0.75 * sizeY);
             polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
             polyline.getPoints().addAll(Data);
@@ -376,17 +522,20 @@ public class J3D {
             polylines.add(polyline);
         }
         polygrp.getChildren().addAll(polylines);
+
         if(rePlot){
             plottedElements.getChildren().clear();
 
             rePlot = false;
         }
+
         plottedElements.getChildren().addAll(polygrp);
+
         this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
                 minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
                 zArray);
 
-        rePlot = true;
+        rePlot = true;}
     }
     public void plotSurface(double[] xArray, double[] zArray, double[][] yArray) {
         this.XArray = xArray;
@@ -882,11 +1031,11 @@ public class J3D {
         this.zSeriesArray = zSeriesArray;
     }
 
-    public List<Text> getAxis_label() {
+    public Group getAxis_label() {
         return axis_label;
     }
 
-    public void setAxis_label(List<Text> axis_label) {
+    public void setAxis_label(Group axis_label) {
         this.axis_label = axis_label;
     }
 
@@ -941,4 +1090,6 @@ public class J3D {
         this.drawMode = drawMode;
         meshView.setDrawMode(drawMode);
     }
+
+
 }
