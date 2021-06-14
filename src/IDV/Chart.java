@@ -1,28 +1,35 @@
 package IDV;
 
-import javafx.beans.binding.BooleanBinding;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.event.ActionEvent;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.*;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 
 public class Chart {
     private final Rectangle zoomRect = new Rectangle();
@@ -34,8 +41,8 @@ public class Chart {
     private LineChart linechart;
 
     private XYChart.Series series = new XYChart.Series();
-    private double xAxislowerBound;
-    private double xAxisUpperBound;
+    private int xAxislowerBound;
+    private int xAxisUpperBound;
     private double pre_view_xL;
     private double pre_view_xU;
     private double pre_view_yL;
@@ -46,12 +53,21 @@ public class Chart {
     private double ini_view_yU;
     private boolean dataTips;
     ArrayList<Label> labelsPosition = new ArrayList<>();
+    public Window getWindow() {
+        return window;
+    }
 
+    public void setWindow(Window window) {
+        this.window = window;
+    }
+
+    private Window window;
 
     public Chart() {
         zoomRect.setManaged(false);
         zoomRect.setFill(Color.LIGHTSEAGREEN.deriveColor(0, 1, 1, 0.5));
         linechart = new LineChart(xAxis, yAxis);
+        linechart.getXAxis().setTickLength(1);
         chart.getChildren().add(linechart);
         linechart.setCreateSymbols(false);
         linechart.getData().add(series);
@@ -66,14 +82,48 @@ public class Chart {
         contextMenu = new ContextMenu();
         MenuItem privious_view = new MenuItem("Previous View");
         MenuItem initial_view = new MenuItem("Initial View");
-        MenuItem ppmItem = new MenuItem("ppm");
-        MenuItem hzItem = new MenuItem("Hz");
+//        MenuItem ppmItem = new MenuItem("ppm");
+//        MenuItem hzItem = new MenuItem("Hz");
         privious_view.setOnAction(event -> restoreView());
         initial_view.setOnAction(event -> intialView());
+        MenuItem saveImg = new MenuItem("Save as an Image");
+        saveImg.setOnAction(event -> {
+            try
+            {
+                FileChooser fileChooser = new FileChooser();
+
+                //Set extension filter for text files
+                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PNG files (*.png)", "*.png");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+                //Show save file dialog
+                File file = fileChooser.showSaveDialog(window);
+
+                if (file != null) {
+                    SnapshotParameters sp = new SnapshotParameters();
+                    sp.setTransform(javafx.scene.transform.Transform.scale(4, 4));
+                    WritableImage image2 = this.getChart().snapshot(sp, null);
+
+                    BufferedImage bufImageARGB2 = SwingFXUtils.fromFXImage(image2, null);
+                    BufferedImage bufImageRGB2 = new BufferedImage(bufImageARGB2.getWidth(), bufImageARGB2.getHeight(), BufferedImage.OPAQUE);
+
+                    Graphics2D graphics2 = bufImageRGB2.createGraphics();
+                    graphics2.drawImage(bufImageARGB2, 0, 0, null);
+                    ImageIO.write(bufImageRGB2,"png", file);
+                }
+
+            }
+            catch(Exception exception)
+            {
+                //code
+            }
+        });
+
         contextMenu.getItems().addAll(privious_view);
         contextMenu.getItems().addAll(initial_view);
-        contextMenu.getItems().addAll(ppmItem);
-        contextMenu.getItems().addAll(hzItem);
+//        contextMenu.getItems().addAll(ppmItem);
+//        contextMenu.getItems().addAll(hzItem);
+        contextMenu.getItems().add(saveImg);
 
 
 
@@ -90,6 +140,9 @@ public class Chart {
         xAxis.setUpperBound(ini_view_xU);
         yAxis.setLowerBound(ini_view_yL);
         yAxis.setUpperBound(ini_view_yU);
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
     }
 
     private void restoreView() {
@@ -98,11 +151,16 @@ public class Chart {
         xAxis.setUpperBound(pre_view_xU);
         yAxis.setLowerBound(pre_view_yL);
         yAxis.setUpperBound(pre_view_yU);
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
     }
 
     public void plot(double[] xArray, double[] data, int selected) {
+        removeTips();
         xAxis.setLowerBound(Arrays.stream(xArray).min().getAsDouble());
         xAxis.setUpperBound(Arrays.stream(xArray).max().getAsDouble());
+        xAxis.setTickUnit(1);
         yAxis.setLowerBound(Arrays.stream(data).min().getAsDouble() - Math.abs(Arrays.stream(data).min().getAsDouble()));
         yAxis.setUpperBound(Arrays.stream(data).max().getAsDouble() + Math.abs(Arrays.stream(data).max().getAsDouble()));
         ini_view_xL = xAxis.getLowerBound();
@@ -199,13 +257,15 @@ public class Chart {
         zoomingNode.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
-                removeTips();
+
                 switch (event.getCode()) {
                     case RIGHT:
+                        removeTips();
                         doShift((LineChart<Number, Number>) zoomingNode, 'r');
                         event.consume();
                         break;
                     case LEFT:
+                        removeTips();
                         doShift((LineChart<Number, Number>) zoomingNode, 'l');
                         event.consume();
                         break;
@@ -229,9 +289,15 @@ public class Chart {
         if (orin == 'r') {
             xAxis.setLowerBound(xAxis.getLowerBound() + 5);
             xAxis.setUpperBound(xAxis.getUpperBound() + 5);
+            xAxislowerBound = (int) xAxis.getLowerBound();
+            xAxisUpperBound = (int) xAxis.getUpperBound();
+//            Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         } else {
             xAxis.setLowerBound(xAxis.getLowerBound() - 5);
             xAxis.setUpperBound(xAxis.getUpperBound() - 5);
+            xAxislowerBound = (int) xAxis.getLowerBound();
+            xAxisUpperBound = (int) xAxis.getUpperBound();
+//            Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         }
     }
     private void doZoom(Rectangle zoomRect, LineChart<Number, Number> chart) {
@@ -259,10 +325,13 @@ public class Chart {
         xAxis.setUpperBound(xAxis.getLowerBound() + zoomRect.getWidth() / xAxisScale);
         yAxis.setUpperBound(yAxis.getUpperBound() + yOffset / yAxisScale);
         yAxis.setLowerBound(yAxis.getUpperBound() + zoomRect.getHeight() / yAxisScale);
-        xAxislowerBound = xAxis.getLowerBound();
-        xAxisUpperBound = xAxis.getUpperBound();
+        xAxislowerBound = (int) xAxis.getLowerBound();
+        xAxisUpperBound = (int) xAxis.getUpperBound();
+//        Controller.j3D.zoomX(xAxislowerBound,xAxisUpperBound);
         zoomRect.setWidth(0);
         zoomRect.setHeight(0);
+
+
     }
     public ContextMenu getContextMenu() {
         return contextMenu;

@@ -1,23 +1,32 @@
 package IDV;
 
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -39,8 +48,32 @@ public class JHEAT {
     private int numberOfPoints;
     private double max;
     private double min;
-    private Text hLabel;
-    private Text vLabel;
+    private Text hLabel = new Text("");
+    private Text vLabel = new Text("");
+    private Group hGrids;
+    private Group vGrids;
+    public Window getWindow() {
+        return window;
+    }
+
+    public void setWindow(Window window) {
+        this.window = window;
+    }
+
+    private Window window;
+
+    public void sethLabel(Text hLabel) {
+        this.hLabel = hLabel;
+    }
+
+    public void setvLabel(Text vLabel) {
+        this.vLabel = vLabel;
+    }
+    public ContextMenu getRightClickMenu() {
+        return rightClickMenu;
+    }
+
+    private ContextMenu rightClickMenu = new ContextMenu();
     private Node sideBar;
     private boolean reStackPlot = false;
     private boolean reStackDisPlot = false;
@@ -52,11 +85,52 @@ public class JHEAT {
         frame.setHgap(5);
         frame.setVgap(5);
         frame.setPadding(new Insets(20,20,20,20));
+        mouseTools();
+    }
+
+    private void mouseTools() {
+        MenuItem saveImg = new MenuItem("Save as an Image");
+        rightClickMenu = new ContextMenu();
+        rightClickMenu.getItems().add(saveImg);
+        saveImg.setOnAction(event -> {
+            try
+            {
+                FileChooser fileChooser = new FileChooser();
+
+                //Set extension filter for text files
+                FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PNG files (*.png)", "*.png");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+                //Show save file dialog
+                File file = fileChooser.showSaveDialog(window);
+
+                if (file != null) {
+                    SnapshotParameters sp = new SnapshotParameters();
+                    sp.setTransform(javafx.scene.transform.Transform.scale(4, 4));
+                    WritableImage image3 = this.getFrame().snapshot(sp, null);
+
+                    BufferedImage bufImageARGB3 = SwingFXUtils.fromFXImage(image3, null);
+                    BufferedImage bufImageRGB3 = new BufferedImage(bufImageARGB3.getWidth(), bufImageARGB3.getHeight(), BufferedImage.OPAQUE);
+
+                    Graphics2D graphics3 = bufImageRGB3.createGraphics();
+                    graphics3.drawImage(bufImageARGB3, 0, 0, null);
+                    ImageIO.write(bufImageRGB3,"png", file);
+                }
+
+            }
+            catch(Exception exception)
+            {
+                //code
+            }
+        });
+        root.setOnContextMenuRequested(event -> rightClickMenu.show(root, event.getScreenX(), event.getScreenY()));
     }
 
     public void plot (double[][] data) {
         if(reStackPlot){
             this.getRoot().getChildren().removeAll(imageViewArrayList);
+            frame.getChildren().removeAll(vGrids);
+            frame.getChildren().removeAll(hGrids);
             frame.getChildren().removeAll(sideBar);
 
         }
@@ -77,8 +151,7 @@ public class JHEAT {
         }
         root.getChildren().addAll(imageViewArrayList);
 
-        hLabel = new Text("h label");
-        vLabel = new Text("v label");
+
         vLabel.setRotate(-90);
         if(!reStackPlot){
             frame.add(this.getRoot(),2,0,1,1);
@@ -93,8 +166,8 @@ public class JHEAT {
         reStackPlot = true;
     }
     public void setGrid(double[] vGrid, double[] hGrid) {
-        Group vGrids = createVGrid(vGrid);
-        Group hGrids = createHGrid(hGrid);
+        vGrids = createVGrid(vGrid);
+        hGrids = createHGrid(hGrid);
         frame.setValignment(vGrids, VPos.CENTER);
         frame.setHalignment(hGrids, HPos.CENTER);
         frame.add(vGrids, 1,0,1,1);
@@ -102,13 +175,24 @@ public class JHEAT {
     }
     private Group createHGrid(double[] hGrid) {
         Group grp = new Group();
+        if(hGrid.length<20) { 
         for(double value : hGrid) {
             Text text = new Text(String.format("%.1f", value));
             text.setRotate(90);
             double transX = value*(((image_width)/hGrid.length));
             text.setTranslateX(transX);
             grp.getChildren().add(text);
-        }
+        } 
+        } else {
+            for(int i=0; i<hGrid.length;i+=50) {
+                double value = hGrid[i];
+                Text text = new Text(String.format("%.1f", value));
+                text.setRotate(90);
+                double transX = value*(((image_width)/(hGrid[hGrid.length-1] - hGrid[0])));
+                text.setTranslateX(transX);
+                grp.getChildren().add(text);
+            }
+        } 
         return grp;
     }
 
