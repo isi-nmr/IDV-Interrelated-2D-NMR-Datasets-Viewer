@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.PickResult;
@@ -15,6 +16,7 @@ import javafx.stage.Window;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Controller implements Initializable {
@@ -30,7 +32,7 @@ public class Controller implements Initializable {
     @FXML
     BorderPane borderPane1;
     @FXML
-    Pane stackview_center_pane;
+    StackPane stackview_center_pane;
     @FXML
     ToggleButton logScale;
     @FXML
@@ -45,6 +47,8 @@ public class Controller implements Initializable {
     ChoiceBox dataChoicer2;
     @FXML
     TabPane mainTab;
+    @FXML
+    GridPane grid_center;
 
     public Window getWindow() {
         return window;
@@ -72,18 +76,20 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+
         JHEAT heatmap = new JHEAT(800,600);
         heatmap.sethLabel(new Text("frequency"));
         heatmap.plot(data);
         heatmap.setGrid(yArray,xArray);
-
-        stackview_center_pane.getChildren().add(heatmap.getFrame());
+        grid_center.add(heatmap.getFrame(),0,0);
         plotChart(heatmap.getRoot());
-        chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2,event.getScreenX(),event.getScreenY()));
-        chart.getChart().setTranslateX(1050);
-        chart.getChart().setTranslateY(50);
-        stackview_center_pane.getChildren().add(chart.getChart());
 
+        chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2,event.getScreenX(),event.getScreenY()));
+        grid_center.add(chart.getChart(),1,0);
+        HBox.setHgrow(chart.getChart(),Priority.ALWAYS);
+//        grid_center.setGridLinesVisible(true);
+//        heatmap.getFrame().setGridLinesVisible(true);
 
         j3D = new J3D(400,400,400);
         j3D.setWindow(window);
@@ -302,38 +308,64 @@ public class Controller implements Initializable {
                             if (flagData.get()) {
                                 if (freqdomain||ppmunit ) {
                                     data = DataHolder.getInstance().dataFD;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
+                                    if (data != null) {
+                                        heatmap.plot(data);
+                                        heatmap.setGrid(yArray,xArray);
+                                    } else {
+                                        messeageBar.setText("Data is null");
+                                    }
                                 } else {
                                     data = DataHolder.getInstance().dataTD;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
+                                    if (data != null) {
+                                        heatmap.plot(data);
+                                        heatmap.setGrid(yArray,xArray);
+                                    } else {
+                                        messeageBar.setText("Data is null");
+                                    }
                                 }
                             }
                             break;
                         case "Fit":
-                            if (flagFit.get()) {
-                                if (freqdomain||ppmunit) {
-                                    data = DataHolder.getInstance().dataFDFit;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
-                                }else {
-                                    data = DataHolder.getInstance().dataTDFit;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
+
+                                if (flagFit.get()) {
+                                    if (freqdomain||ppmunit) {
+                                        data = DataHolder.getInstance().dataFDFit;
+                                        if (data != null) {
+                                            heatmap.plot(data);
+                                            heatmap.setGrid(yArray,xArray);
+                                        } else {
+                                            messeageBar.setText("Fit is null");
+                                        }
+                                    }else {
+                                        data = DataHolder.getInstance().dataTDFit;
+                                        if (data != null) {
+                                            heatmap.plot(data);
+                                            heatmap.setGrid(yArray,xArray);
+                                        } else {
+                                            messeageBar.setText("Fit is null");
+                                        }
+                                    }
                                 }
-                            }
+
                             break;
                         case "Residue":
                             if (flagResidue.get()) {
                                 if (freqdomain||ppmunit) {
                                     data = DataHolder.getInstance().dataFDRes;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
+                                    if (data != null) {
+                                        heatmap.plot(data);
+                                        heatmap.setGrid(yArray,xArray);
+                                    } else {
+                                        messeageBar.setText("Residue is null");
+                                    }
                                 }else {
                                     data = DataHolder.getInstance().dataTDRes;
-                                    heatmap.plot(data);
-                                    heatmap.setGrid(yArray,xArray);
+                                    if (data != null) {
+                                        heatmap.plot(data);
+                                        heatmap.setGrid(yArray,xArray);
+                                    } else {
+                                        messeageBar.setText("Residue is null");
+                                    }
                                 }
                             }
                             break;
@@ -364,18 +396,7 @@ public class Controller implements Initializable {
         return noiseArray;
 
     }
-    private double[][] createNoise() {
-        double[][] noiseArray = new double[50][80];
 
-        for (int x = 0; x < 80; x=x+1) {
-            for (int y = 0; y < 50; y = y+1) {
-                noiseArray[y][x] = (float) ( ((40-y)* Math.sin(Math.PI * 0.1 * y) + (80-x)* Math.sin(Math.PI * 0.1 * x))) ;
-            }
-        }
-
-        return noiseArray;
-
-    }
 
     public void selectVoxel(JHEAT root_voxel, JHEAT root_meta, double[][][][] data){
             root_voxel.getRootBox().setOnMouseClicked(event -> {

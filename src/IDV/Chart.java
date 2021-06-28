@@ -53,6 +53,9 @@ public class Chart {
     private double ini_view_yU;
     private boolean dataTips;
     ArrayList<Label> labelsPosition = new ArrayList<>();
+    private double minX;
+    private double maxY;
+
     public Window getWindow() {
         return window;
     }
@@ -161,8 +164,10 @@ public class Chart {
         xAxis.setLowerBound(Arrays.stream(xArray).min().getAsDouble());
         xAxis.setUpperBound(Arrays.stream(xArray).max().getAsDouble());
         xAxis.setTickUnit(1);
-        yAxis.setLowerBound(Arrays.stream(data).min().getAsDouble() - Math.abs(Arrays.stream(data).min().getAsDouble()));
-        yAxis.setUpperBound(Arrays.stream(data).max().getAsDouble() + Math.abs(Arrays.stream(data).max().getAsDouble()));
+        minX = Arrays.stream(data).min().getAsDouble() - Math.abs(Arrays.stream(data).min().getAsDouble());
+        maxY = Arrays.stream(data).max().getAsDouble() + Math.abs(Arrays.stream(data).max().getAsDouble());
+        yAxis.setLowerBound(minX);
+        yAxis.setUpperBound(maxY);
         ini_view_xL = xAxis.getLowerBound();
         ini_view_xU = xAxis.getUpperBound();
         ini_view_yL = yAxis.getLowerBound();
@@ -183,6 +188,16 @@ public class Chart {
         }
         linechart.getData().add(series);
         series.setName("signal:  " + (selected+1));
+        if (minX>Arrays.stream(data).min().getAsDouble()) {
+            minX = Arrays.stream(data).min().getAsDouble() - Math.abs(Arrays.stream(data).min().getAsDouble());
+        }
+        if (maxY<Arrays.stream(data).max().getAsDouble()){
+            maxY = Arrays.stream(data).max().getAsDouble() + Math.abs(Arrays.stream(data).max().getAsDouble());
+        }
+
+        yAxis.setLowerBound(minX);
+        yAxis.setUpperBound(maxY);
+
     }
 
 
