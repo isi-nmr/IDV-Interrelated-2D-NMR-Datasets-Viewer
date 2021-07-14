@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 import javafx.stage.Window;
 
@@ -49,7 +50,12 @@ public class Controller implements Initializable {
     TabPane mainTab;
     @FXML
     GridPane grid_center;
-
+    @FXML
+    RadioButton rainbow;
+    @FXML
+    Slider lineWidth;
+    @FXML
+    Slider opacity;
     public Window getWindow() {
         return window;
     }
@@ -77,7 +83,6 @@ public class Controller implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-
         JHEAT heatmap = new JHEAT(800,600);
         heatmap.sethLabel(new Text("frequency"));
         heatmap.plot(data);
@@ -92,6 +97,8 @@ public class Controller implements Initializable {
 //        heatmap.getFrame().setGridLinesVisible(true);
 
         j3D = new J3D(400,400,400);
+        j3D.strokewidth = lineWidth.valueProperty();
+        j3D.opacity = opacity.valueProperty();
         j3D.setWindow(window);
         heatmap.setWindow(window);
 //        colorPicker.setValue(Color.RED);
@@ -132,11 +139,21 @@ public class Controller implements Initializable {
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrFD;
                 yArray = DataHolder.getInstance().yArrFD;
-                data =  DataHolder.getInstance().dataFD;
+                Color color;
+                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
+                    data =  DataHolder.getInstance().dataFD;
+                    color = Color.RED;
+                } else if (dataChoicer2.getSelectionModel().getSelectedIndex() == 1){
+                    data =  DataHolder.getInstance().dataFDFit;
+                    color = Color.BLUE;
+                } else {
+                    data =  DataHolder.getInstance().dataFDRes;
+                    color = Color.BLACK;
+                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("frequency"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-                j3D.plotSeries(xArray, yArray, data,false, Color.RED);
+                j3D.plotSeries(xArray, yArray, data,false, color);
             }
             });
 
@@ -146,11 +163,21 @@ public class Controller implements Initializable {
                 freqdomain = false;
                 xArray = DataHolder.getInstance().xArrPPM;
                 yArray = DataHolder.getInstance().yArrFD;
-                data =  DataHolder.getInstance().dataFD;
+                Color color;
+                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
+                    data =  DataHolder.getInstance().dataFD;
+                    color = Color.RED;
+                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
+                    data =  DataHolder.getInstance().dataFDFit;
+                    color = Color.BLUE;
+                } else {
+                    data =  DataHolder.getInstance().dataFDRes;
+                    color = Color.BLACK;
+                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("ppm"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-                j3D.plotSeries(xArray, yArray, data,false, Color.RED);
+                j3D.plotSeries(xArray, yArray, data,false, color);
             }
         });
         j3D.getRightClickMenu().getItems().add(FDomain);
@@ -161,17 +188,45 @@ public class Controller implements Initializable {
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrTD;
                 yArray = DataHolder.getInstance().yArrTD;
-                data =  DataHolder.getInstance().dataTD;
+                Color color;
+                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
+                    data =  DataHolder.getInstance().dataTD;
+                    color = Color.RED;
+                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
+                    data =  DataHolder.getInstance().dataTDFit;
+                    color = Color.BLUE;
+                } else {
+                    data =  DataHolder.getInstance().dataTDRes;
+                    color = Color.BLACK;
+                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("time"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-                j3D.plotSeries(xArray, yArray, data,false, Color.RED);
+
+                j3D.plotSeries(xArray, yArray, data,false, color);
 
             }
         });
         j3D.getRightClickMenu().getItems().add(TDomain);
 
-
+        rainbow.setOnAction(event -> {
+            if (rainbow.isSelected()) {
+                j3D.plotSeries(xArray, yArray, data,false, Color.TRANSPARENT);}
+            else {
+                Color color;
+                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
+                    data =  DataHolder.getInstance().dataFD;
+                    color = Color.RED;
+                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
+                    data =  DataHolder.getInstance().dataFDFit;
+                    color = Color.BLUE;
+                } else {
+                    data =  DataHolder.getInstance().dataFDRes;
+                    color = Color.BLACK;
+                }
+                j3D.plotSeries(xArray, yArray, data,false, color);
+            }
+        });
 
         Menu FDomain2 = new Menu("frequency domain");
         MenuItem hertz2 = new MenuItem("Hz");
@@ -252,6 +307,7 @@ public class Controller implements Initializable {
 
         dataChoicer.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
+                        rainbow.setSelected(false);
                         switch ((String) newValue) {
                         case "Data":
                             if (flagData.get()) {

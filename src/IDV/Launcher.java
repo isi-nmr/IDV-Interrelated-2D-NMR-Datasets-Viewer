@@ -24,5 +24,13 @@ public class Launcher {
         DataHolder.getInstance().dataFD = noiseArray;
         DataHolder.getInstance().xArrFD = xArrayy;
         DataHolder.getInstance().yArrFD = yArrayy;
+        DataHolder.getInstance().dataFDFit = noiseArray;
+        DataHolder.getInstance().xArrTD = xArrayy;
+        DataHolder.getInstance().yArrTD = yArrayy;
+        DataHolder.getInstance().dataFDRes = noiseArray;
+        DataHolder.getInstance().dataTDFit = noiseArray;
+        DataHolder.getInstance().dataTDRes = noiseArray;
+        DataHolder.getInstance().dataTD = noiseArray;
+
     }
 }

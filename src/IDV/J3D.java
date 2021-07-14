@@ -1,6 +1,7 @@
 package IDV;
 
 
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
 import javafx.scene.*;
@@ -72,6 +73,14 @@ public class J3D {
     private double minY;
     private double cofY;
     private double maxY;
+    ObservableValue strokewidth;
+    ObservableValue opacity;
+    private Group polygrp = new Group();
+
+
+    public Group getPolygrp() {
+        return polygrp;
+    }
 
     public Window getWindow() {
         return window;
@@ -503,7 +512,7 @@ public class J3D {
         double numOfSample = xArray.length;
         double numOfVector = zArray.length;
         polylines = new ArrayList<>();
-        Group polygrp = new Group();
+        polygrp = new Group();
         for (int vector = 0; vector < numOfVector; vector++) {
             Double[]  Data = new Double[(int) (2 * numOfSample)];
             for(int i=0; i < 2*numOfSample; i=i+2) {
@@ -515,10 +524,25 @@ public class J3D {
             Polyline polyline = new Polyline();
 //            polyline.strokeProperty().bind(colorPicker.valueProperty());
             polyline.setStroke(color);
+            if (color == Color.TRANSPARENT) {
+                polyline.setStroke(Color.color(Math.random(),Math.random(),Math.random()));
+            }
             polyline.setTranslateY(0.75 * sizeY);
             polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
             polyline.getPoints().addAll(Data);
-            polyline.setStrokeWidth(0.5);
+            polyline.setOpacity(0.5);
+            polyline.setOnMouseEntered(event ->
+                    {
+                        polyline.strokeWidthProperty().unbind();
+                        polyline.opacityProperty().unbind();
+                        polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
+                        polyline.setOpacity(1);});
+            polyline.setOnMouseExited(event ->
+                    {
+                        polyline.strokeWidthProperty().bind(strokewidth);
+                        polyline.opacityProperty().bind(opacity);});
+            polyline.strokeWidthProperty().bind(strokewidth);
+            polyline.opacityProperty().bind(opacity);
             polylines.add(polyline);
         }
         polygrp.getChildren().addAll(polylines);

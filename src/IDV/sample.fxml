@@ -6,7 +6,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1">
+<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" >
   <tabs>
     <Tab fx:id="tab1" text="3D View">
       <content>
@@ -39,7 +39,35 @@
                                          </FXCollections>
                                      </items>
                                     </ChoiceBox>
-                                    <RadioButton fx:id="holdon" mnemonicParsing="false" text="Hold On" />
+                                    <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="0.0">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding></Separator>
+                                    <RadioButton fx:id="holdon" mnemonicParsing="false" text="Hold On">
+                                       <padding>
+                                          <Insets left="10.0" />
+                                       </padding></RadioButton>
+                                    <Separator orientation="VERTICAL" prefHeight="26.0" prefWidth="3.0">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding></Separator>
+                                    <RadioButton fx:id="rainbow" mnemonicParsing="false" text="Colorful">
+                                       <padding>
+                                          <Insets left="10.0" />
+                                       </padding>
+                                    </RadioButton>
+                                    <Separator orientation="VERTICAL" prefHeight="10.0">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding></Separator>
+                                    <Label text="Line Width:" />
+                                    <Slider fx:id="lineWidth" max="1.0" min="0.1" prefHeight="14.0" prefWidth="80.0" value="0.5" />
+                                    <Separator orientation="VERTICAL" prefHeight="10.0">
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding></Separator>
+                                    <Label text="Opacity" />
+                                    <Slider fx:id="opacity" max="1.0" min="0.1" prefWidth="80.0" value="0.5" />
                                  </items>
                                  <opaqueInsets>
                                     <Insets bottom="10.0" top="10.0" />
