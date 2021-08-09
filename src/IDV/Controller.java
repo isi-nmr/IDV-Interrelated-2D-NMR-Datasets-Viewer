@@ -2,6 +2,9 @@ package IDV;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -13,12 +16,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 import javafx.stage.Window;
+import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.RangeSlider;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.ResourceBundle;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
     public static J3D j3D;
@@ -40,10 +47,10 @@ public class Controller implements Initializable {
     ToggleButton datatips;
     @FXML
     TextArea messeageBar;
+
+    boolean holdon = false;
     @FXML
-    RadioButton holdon;
-    @FXML
-    ChoiceBox dataChoicer;
+    CheckComboBox dataChoicer;
     @FXML
     ChoiceBox dataChoicer2;
     @FXML
@@ -56,6 +63,26 @@ public class Controller implements Initializable {
     Slider lineWidth;
     @FXML
     Slider opacity;
+    @FXML
+    RadioButton xy;
+    @FXML
+    RadioButton yz;
+    @FXML
+    RadioButton xz;
+    @FXML
+    CheckBox init;
+    @FXML
+    CheckComboBox signalSelection;
+    @FXML
+    RangeSlider rangeSlider;
+    @FXML
+    ToolBar toolbar3d;
+
+    private Color color;
+    private ArrayList selectedSignals = new ArrayList();
+    private int max_slider;
+    private int min_slider;
+
     public Window getWindow() {
         return window;
     }
@@ -82,8 +109,19 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
-        JHEAT heatmap = new JHEAT(800,600);
+        rangeSlider.setMin(0);
+        rangeSlider.setMax(xArray.length);
+        dataChoicer.getItems().add("Data");
+        dataChoicer.getItems().add("Fit");
+        dataChoicer.getItems().add("Residue");
+        int version = getVersion();
+        JHEAT heatmap = new JHEAT(800, 800);
+        if(version>9) {
+            heatmap.setImage_height(600);
+            heatmap.setImage_width(600);
+            chart.getLinechart().setPrefSize(600,400);
+        }
+        
         heatmap.sethLabel(new Text("frequency"));
         heatmap.plot(data);
         heatmap.setGrid(yArray,xArray);
@@ -104,10 +142,90 @@ public class Controller implements Initializable {
 //        colorPicker.setValue(Color.RED);
 //        j3D.setColorPicker(colorPicker);
         borderPane1.setCenter(j3D.getScene());
+        toolbar3d.getItems().add(j3D.getMouseTip());
         j3D.getScene().heightProperty().bind(anchorPane1.heightProperty());
         j3D.getScene().widthProperty().bind(anchorPane1.widthProperty());
         j3D.getCube().requestFocus();
+        final ObservableList<String> signalsList = FXCollections.observableArrayList();
+        for (int i = 1; i <= yArray.length; i++) {
+            signalsList.add("Signal " + i);
+        }
+        signalSelection.getItems().addAll(signalsList);
+        for (int i = 0; i < yArray.length; i++) {
+            selectedSignals.add(i);
+        }
+        signalSelection.getCheckModel().getCheckedItems().addListener(new ListChangeListener() {
+            @Override
+            public void onChanged(Change c) {
+                if (signalSelection.getCheckModel().getCheckedIndices().size() == 0) {
+                    for (int i = 0; i < yArray.length; i++) {
+                        selectedSignals.add(i);
+                    }
+                    plotter();
+                } else {
+                    selectedSignals = (ArrayList) signalSelection.getCheckModel().getCheckedIndices().stream().collect(Collectors.toList());
+                    plotter();
+                }
+            }
+        });
 
+        rangeSlider.setMin(0);
+        rangeSlider.setMax(xArray.length);
+        rangeSlider.setHighValue(rangeSlider.getMax());
+        max_slider = (int) rangeSlider.getHighValue();
+        min_slider = (int) rangeSlider.getLowValue();
+        rangeSlider.setOnMouseReleased(event -> {
+            max_slider = (int) rangeSlider.getHighValue();
+            min_slider = (int) rangeSlider.getLowValue();
+            plotter();
+        });
+
+//        j3D.getRoot().getChildren().get(j3D.getPolygrp())
+//        j3D.getPolygrp().getChildren().forEach(e -> e.setOnMouseClicked(event -> {
+//            System.out.println("hi");
+//        }));
+
+//
+//                setOnMouseClicked(event -> {
+//
+//            System.out.println(event.getPickResult());
+//        });
+
+        xy.setOnAction(e -> {
+            xz.setSelected(false);
+            yz.setSelected(false);
+            if (xy.isSelected()) {
+                j3D.getRotateX().setAngle(89);
+                j3D.getRotateY().setAngle(0);
+            } else {
+                j3D.getRotateX().setAngle(20);
+                j3D.getRotateY().setAngle(-45);
+            }
+        });
+
+        xz.setOnAction(e -> {
+            xy.setSelected(false);
+            yz.setSelected(false);
+            if (xz.isSelected()) {
+                j3D.getRotateX().setAngle(0);
+                j3D.getRotateY().setAngle(0);
+            } else {
+                j3D.getRotateX().setAngle(20);
+                j3D.getRotateY().setAngle(-45);
+            }
+        });
+
+        yz.setOnAction(e -> {
+            xz.setSelected(false);
+            xy.setSelected(false);
+            if (yz.isSelected()) {
+                j3D.getRotateX().setAngle(0);
+                j3D.getRotateY().setAngle(-89);
+            } else {
+                j3D.getRotateX().setAngle(20);
+                j3D.getRotateY().setAngle(-45);
+            }
+        });
 
         datatips.selectedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
@@ -139,21 +257,10 @@ public class Controller implements Initializable {
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrFD;
                 yArray = DataHolder.getInstance().yArrFD;
-                Color color;
-                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataFD;
-                    color = Color.RED;
-                } else if (dataChoicer2.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataFDFit;
-                    color = Color.BLUE;
-                } else {
-                    data =  DataHolder.getInstance().dataFDRes;
-                    color = Color.BLACK;
-                }
+                plotter();
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("frequency"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-                j3D.plotSeries(xArray, yArray, data,false, color);
             }
             });
 
@@ -163,21 +270,10 @@ public class Controller implements Initializable {
                 freqdomain = false;
                 xArray = DataHolder.getInstance().xArrPPM;
                 yArray = DataHolder.getInstance().yArrFD;
-                Color color;
-                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataFD;
-                    color = Color.RED;
-                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataFDFit;
-                    color = Color.BLUE;
-                } else {
-                    data =  DataHolder.getInstance().dataFDRes;
-                    color = Color.BLACK;
-                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("ppm"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-                j3D.plotSeries(xArray, yArray, data,false, color);
+                plotter();
             }
         });
         j3D.getRightClickMenu().getItems().add(FDomain);
@@ -188,22 +284,22 @@ public class Controller implements Initializable {
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrTD;
                 yArray = DataHolder.getInstance().yArrTD;
-                Color color;
-                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataTD;
-                    color = Color.RED;
-                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataTDFit;
-                    color = Color.BLUE;
-                } else {
-                    data =  DataHolder.getInstance().dataTDRes;
-                    color = Color.BLACK;
-                }
+                plotter();
+//                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
+//                    data =  DataHolder.getInstance().dataTD;
+//                    color = Color.RED;
+//                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
+//                    data =  DataHolder.getInstance().dataTDFit;
+//                    color = Color.BLUE;
+//                } else {
+//                    data =  DataHolder.getInstance().dataTDRes;
+//                    color = Color.BLACK;
+//                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("time"));
                 j3D.setAxis_label_y(new Text("amplitude"));
 
-                j3D.plotSeries(xArray, yArray, data,false, color);
+
 
             }
         });
@@ -211,20 +307,11 @@ public class Controller implements Initializable {
 
         rainbow.setOnAction(event -> {
             if (rainbow.isSelected()) {
-                j3D.plotSeries(xArray, yArray, data,false, Color.TRANSPARENT);}
-            else {
-                Color color;
-                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataFD;
-                    color = Color.RED;
-                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataFDFit;
-                    color = Color.BLUE;
-                } else {
-                    data =  DataHolder.getInstance().dataFDRes;
-                    color = Color.BLACK;
-                }
-                j3D.plotSeries(xArray, yArray, data,false, color);
+                color = Color.TRANSPARENT;
+                j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
+                j3D.plotSeries(xArray, yArray, data, false, color, selectedSignals, min_slider, max_slider);
+            } else {
+                plotter();
             }
         });
 
@@ -299,62 +386,16 @@ public class Controller implements Initializable {
         AtomicBoolean flagData = new AtomicBoolean(true);
         AtomicBoolean flagFit = new AtomicBoolean(true);
         AtomicBoolean flagResidue = new AtomicBoolean(true);
-        holdon.selectedProperty().addListener( (observable, oldValue, newValue) -> {
-                flagData.set(true);
-                flagFit.set(true);
-                flagResidue.set(true);
-        });
-
-        dataChoicer.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                        rainbow.setSelected(false);
-                        switch ((String) newValue) {
-                        case "Data":
-                            if (flagData.get()) {
-                                if (freqdomain||ppmunit) {
-                                    data = DataHolder.getInstance().dataFD;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataFD, holdon.isSelected(), Color.RED);
-                                }else {
-                                    data = DataHolder.getInstance().dataTD;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataTD, holdon.isSelected(), Color.RED);
-                                }
-                                if (holdon.isSelected())
-                                flagData.set(false);
-                            }
-                            break;
-                        case "Fit":
-                            if (flagFit.get()) {
-                                if (freqdomain||ppmunit) {
-                                    data = DataHolder.getInstance().dataFDFit;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataFDFit, holdon.isSelected(), Color.BLUE);
-                                }else {
-                                    data = DataHolder.getInstance().dataTDFit;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataTDFit, holdon.isSelected(), Color.BLUE);
-                                }
-                                if (holdon.isSelected())
-                                    flagFit.set(false);
-                            }
-                            break;
-                        case "Residue":
-                            if (flagResidue.get()) {
-                                if (freqdomain||ppmunit) {
-                                    data = DataHolder.getInstance().dataFDRes;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataFDRes, holdon.isSelected(), Color.BLACK,'s');
-                                }else {
-                                    data = DataHolder.getInstance().dataTDRes;
-                                    j3D.plotSeries(xArray, yArray, DataHolder.getInstance().dataTDRes, holdon.isSelected(), Color.BLACK,'s');
-                                }
-                                if (holdon.isSelected())
-                                    flagResidue.set(false);
-                            }
-                            break;
-
-
-
-                    }
-                });
-
-        dataChoicer.setValue("Data");
+//        holdon.selectedProperty().addListener( (observable, oldValue, newValue) -> {
+//                flagData.set(true);
+//                flagFit.set(true);
+//                flagResidue.set(true);
+//        });
+        dataChoicer.getCheckModel().getCheckedItems().addListener(new ListChangeListener() {
+                                                                      @Override
+                                                                      public void onChanged(Change c) {
+                                                                          plotter(); };});
+        dataChoicer.getCheckModel().check(0);
 
 
         dataChoicer2.getSelectionModel().selectedItemProperty().addListener(
@@ -477,7 +518,11 @@ public class Controller implements Initializable {
             } else {
                 PickResult a = event.getPickResult();
                 Node node = a.getIntersectedNode();
-                chart.plot(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+                try {
+                    chart.plot(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+                } catch (NumberFormatException e) {
+
+                }
                 messeageBar.setText("Hold Ctrl For Selecting More Signals");
             }
         }
@@ -487,6 +532,52 @@ public class Controller implements Initializable {
 
     }
 
+    public void plotter() {
+        rainbow.setSelected(false);
+        j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
+        if (dataChoicer.getCheckModel().getCheckedIndices().size()>1)
+            holdon = true;
+        else {
+            holdon = false;
+        }
+
+        dataChoicer.getCheckModel().getCheckedItems().forEach(selected -> {
+            switch ((String) selected) {
+                case "Data":
+                        color = Color.RED;
+                        if (freqdomain || ppmunit) {
+                            data = DataHolder.getInstance().dataFD;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                        } else {
+                            data = DataHolder.getInstance().dataTD;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                        }
+                    break;
+                case "Fit":
+                        color = Color.BLUE;
+                        if (freqdomain || ppmunit) {
+                            data = DataHolder.getInstance().dataFDFit;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                        } else {
+                            data = DataHolder.getInstance().dataTDFit;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                        }
+                    break;
+                case "Residue":
+                        color = Color.BLACK;
+                        if (freqdomain || ppmunit) {
+                            data = DataHolder.getInstance().dataFDRes;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                        } else {
+                            data = DataHolder.getInstance().dataTDRes;
+                            j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                        }
+                    break;
+            }
+            ;
+        });
+
+    }
     public double[][] getData() {
         return data;
     }
@@ -509,5 +600,14 @@ public class Controller implements Initializable {
 
     public void setyArray(double[] yArray) {
         this.yArray = yArray;
+    }
+    private static int getVersion() {
+        String version = System.getProperty("java.version");
+        if(version.startsWith("1.")) {
+            version = version.substring(2, 3);
+        } else {
+            int dot = version.indexOf(".");
+            if(dot != -1) { version = version.substring(0, dot); }
+        } return Integer.parseInt(version);
     }
 }

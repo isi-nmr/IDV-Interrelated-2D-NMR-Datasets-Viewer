@@ -2,11 +2,14 @@ package IDV;
 
 
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelWriter;
@@ -27,11 +30,12 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 public class J3D {
+    private final LinkedList<Color> colors;
+    private Label mouseTip = new Label("");
     private double sceneSizeX = 800;
     private double sceneSizeY = 600;
     private double sizeX;
@@ -75,10 +79,18 @@ public class J3D {
     private double maxY;
     ObservableValue strokewidth;
     ObservableValue opacity;
-    private Group polygrp = new Group();
+    private ArrayList polygrp;
+    private boolean focusmode = false;
 
+    public Group getPlottedElements() {
+        return plottedElements;
+    }
 
-    public Group getPolygrp() {
+    public Label getMouseTip() {
+        return mouseTip;
+    }
+
+    public ArrayList getPolygrp() {
         return polygrp;
     }
 
@@ -100,7 +112,7 @@ public class J3D {
 
     private ContextMenu rightClickMenu = new ContextMenu();
     private boolean rePlot = false;
-    List<Polyline> polylines;
+    List<Polyline> polylines = new ArrayList<>();
     private ColorPicker colorPicker;
     private DrawMode drawMode = DrawMode.LINE;
     private MeshView meshView;
@@ -134,7 +146,19 @@ public class J3D {
 //        createAxisLabel();
 
         mouseTool();
+
         this.getCube().getChildren().addAll(plottedElements);
+        colors = new LinkedList<>();
+        colors.add(Color.RED);
+        colors.add(Color.VIOLET);
+        colors.add(Color.ORANGE);
+        colors.add(Color.INDIGO);
+        colors.add(Color.YELLOWGREEN);
+        colors.add(Color.BLUE);
+        colors.add(Color.DARKGREEN);
+
+
+
 
     }
 
@@ -154,8 +178,8 @@ public class J3D {
         axis_label_x.setRotate(90);
 
 
-        axis_label_z.setTranslateY(sizeY);
-        axis_label_z.setTranslateX(sizeX/2);
+        axis_label_z.setTranslateY(sizeY+50);
+        axis_label_z.setTranslateX(sizeX/2 - axis_label_z.getLayoutBounds().getWidth()/2);
         axis_label_z.setTranslateZ(-sizeZ/2 - 100);
         axis_label_z.setFont(font);
 
@@ -421,7 +445,7 @@ public class J3D {
 
         return label;
     }
-    public void plotHoldon(double[] xArray, double[] zArray, double[][] yArray, Color color){
+    public void plotHoldon(double[] xArray, double[] zArray, double[][] yArray, Color color, ArrayList list){
 //        if ( minY > Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble() ||
 //        maxY < Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble()) {
 //            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
@@ -432,30 +456,64 @@ public class J3D {
         double numOfVector = zArray.length;
         polylines = new ArrayList<>();
         Group polygrp = new Group();
-        for (int vector = 0; vector < numOfVector; vector++) {
+        list.forEach(vector -> {
             Double[]  Data = new Double[(int) (2 * numOfSample)];
             for(int i=0; i < 2*numOfSample; i=i+2) {
                 Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
-                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[(int)vector][i/2] - ((minY*sizeY)/cofY)));
 //                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
-
             }
             Polyline polyline = new Polyline();
             polyline.setStroke(color);
             polyline.setOpacity(50);
             polyline.setTranslateY(0.75 * sizeY);
-            polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector)-((1e-2)* Math.random()));
+            polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector)-((1e-2)* Math.random()));
             polyline.getPoints().addAll(Data);
             polyline.setStrokeWidth(0.5);
+            int finalVector = (int)vector;
+            polyline.setOnMouseEntered(event ->
+            {
+                polyline.strokeWidthProperty().unbind();
+                polyline.opacityProperty().unbind();
+                polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
+                polyline.setOpacity(1);
+                mouseTip.setText(String.valueOf(finalVector+1));
+            });
+            polyline.setOnMouseExited(event ->
+            {
+                polyline.strokeWidthProperty().bind(strokewidth);
+                polyline.opacityProperty().bind(opacity);
+                });
+            polyline.setOnMouseClicked(event -> {
+                if (!focusmode) {
+                    polylines.forEach(event2 -> {
+                        event2.setVisible(false);
+                    });
+                    polyline.setVisible(true);
+                    focusmode =true;
+                    mouseTip.setText(String.valueOf(finalVector+1));
+                } else {
+                    polylines.forEach(event2 -> {
+                        event2.setVisible(true);
+                        focusmode =false;
+                    });
+                    mouseTip.setText("");
+                }
+            });
             polylines.add(polyline);
-        }
-        polygrp.getChildren().addAll(polylines);
-        plottedElements.getChildren().addAll(polygrp);
+        });
+        plottedElements.getChildren().addAll(polylines);
     }
 
-    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray, boolean holdon, Color color, char s) {
+    public void plotSeries(double[] xArray_org, double[] zArray, double[][] data, boolean holdon, Color color, char s, ArrayList list, int min, int max) {
+        double[] xArray = new double[max-min];
+        System.arraycopy(xArray_org,min,xArray, 0,max-min);
+        double[][] yArray = new double[data.length][max - min];
+        for (int i = 0; i < data.length; i++) {
+            System.arraycopy(data[i],min,yArray[i], 0,max-min);
+        }
         if (holdon) {
-            plotHoldon(xArray, zArray, yArray, color);}else{
+            plotHoldon(xArray, zArray, yArray, color, list);}else{
             if (s != 's'){
             minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
             maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
@@ -467,11 +525,11 @@ public class J3D {
             double numOfVector = zArray.length;
             polylines = new ArrayList<>();
             Group polygrp = new Group();
-            for (int vector = 0; vector < numOfVector; vector++) {
+            list.forEach(vector -> {
                 Double[]  Data = new Double[(int) (2 * numOfSample)];
                 for(int i=0; i < 2*numOfSample; i=i+2) {
                     Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
-                    Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+                    Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[(int)vector][i/2] - ((minY*sizeY)/cofY)));
 //                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
 
                 }
@@ -479,12 +537,43 @@ public class J3D {
 //            polyline.strokeProperty().bind(colorPicker.valueProperty());
                 polyline.setStroke(color);
                 polyline.setTranslateY(0.75 * sizeY);
-                polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
+                polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector));
                 polyline.getPoints().addAll(Data);
                 polyline.setStrokeWidth(0.5);
+                int finalVector = (int)vector;
+                polyline.setOnMouseEntered(event ->
+                {
+                    polyline.strokeWidthProperty().unbind();
+                    polyline.opacityProperty().unbind();
+                    polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
+                    polyline.setOpacity(1);
+                    mouseTip.setText(String.valueOf(finalVector+1));
+                });
+                polyline.setOnMouseExited(event ->
+                {
+                    polyline.strokeWidthProperty().bind(strokewidth);
+                    polyline.opacityProperty().bind(opacity);
+                    });
+                polyline.setOnMouseClicked(event -> {
+                    if (!focusmode) {
+                        polylines.forEach(event2 -> {
+                            event2.setVisible(false);
+                        });
+                        polyline.setVisible(true);
+                        focusmode =true;
+                        mouseTip.setText(String.valueOf(finalVector+1));
+                    } else {
+                        polylines.forEach(event2 -> {
+                            event2.setVisible(true);
+                            focusmode =false;
+                        });
+                        mouseTip.setText("");
+                    }
+                });
+
                 polylines.add(polyline);
-            }
-            polygrp.getChildren().addAll(polylines);
+            });
+
 
             if(rePlot){
                 plottedElements.getChildren().clear();
@@ -492,7 +581,7 @@ public class J3D {
                 rePlot = false;
             }
 
-            plottedElements.getChildren().addAll(polygrp);
+            plottedElements.getChildren().addAll(polylines);
 
             this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
                     minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
@@ -501,66 +590,184 @@ public class J3D {
             rePlot = true;}
     }
 
-    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray, boolean holdon, Color color) {
+//    public void plotSeries(double[] xArray, double[] zArray, double[][] yArray, boolean holdon, Color color) {
+//        if (holdon) {
+//            plotHoldon(xArray, zArray, yArray, color,list);}else{
+//        minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+//        maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+//        cofY = Math.abs(maxY - minY);
+//        double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
+//        double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
+//        double numOfSample = xArray.length;
+//        double numOfVector = zArray.length;
+//        polylines = new ArrayList<>();
+//        polygrp = new ArrayList<>();
+//        for (int vector = 0; vector < numOfVector; vector++) {
+//            Double[]  Data = new Double[(int) (2 * numOfSample)];
+//            for(int i=0; i < 2*numOfSample; i=i+2) {
+//                Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
+//                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+////                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
+//
+//            }
+//            Polyline polyline = new Polyline();
+////            polyline.strokeProperty().bind(colorPicker.valueProperty());
+//            polyline.setStroke(color);
+//            if (color == Color.TRANSPARENT) {
+//                polyline.setStroke(Color.color(Math.random(),Math.random(),Math.random()));
+//            }
+//            polyline.setTranslateY(0.75 * sizeY);
+//            polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
+//            polyline.getPoints().addAll(Data);
+//            polyline.setOpacity(0.5);
+//            int finalVector = vector;
+//            polyline.setOnMouseEntered(event ->
+//                    {
+//                        polyline.strokeWidthProperty().unbind();
+//                        polyline.opacityProperty().unbind();
+//                        polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
+//                        polyline.setOpacity(1);
+////                        mouseTip.setText(String.valueOf(finalVector));
+//                    });
+//            polyline.setOnMouseExited(event ->
+//                    {
+//                        polyline.strokeWidthProperty().bind(strokewidth);
+//                        polyline.opacityProperty().bind(opacity);});
+//            polyline.setOnMouseClicked(event -> {
+//                if (!focusmode) {
+//                    polylines.forEach(event2 -> {
+//                        event2.setVisible(false);
+//                    });
+//                    polyline.setVisible(true);
+//                    focusmode =true;
+//                } else {
+//                    polylines.forEach(event2 -> {
+//                    event2.setVisible(true);
+//                    focusmode =false;
+//                });
+//
+//                }
+//            });
+//            polyline.strokeWidthProperty().bind(strokewidth);
+//            polyline.opacityProperty().bind(opacity);
+//            polylines.add(polyline);
+//        }
+//        polygrp.addAll(polylines);
+//
+//        if(rePlot){
+//            plottedElements.getChildren().clear();
+//            rePlot = false;
+//        }
+//
+//        plottedElements.getChildren().addAll(polygrp);
+//
+//        this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
+//                minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
+//                zArray);
+//
+//        rePlot = true;}
+//    }
+
+    public void plotSeries(double[] xArray_org, double[] zArray, double[][] data, boolean holdon, Color color, ArrayList list, int min, int max) {
+        double[] xArray = new double[max-min];
+        System.arraycopy(xArray_org,min,xArray, 0,max-min);
+        double[][] yArray = new double[data.length][max - min];
+        for (int i = 0; i < data.length; i++) {
+            System.arraycopy(data[i],min,yArray[i], 0,max-min);
+        }
         if (holdon) {
-            plotHoldon(xArray, zArray, yArray, color);}else{
-        minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
-        maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
-        cofY = Math.abs(maxY - minY);
-        double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
-        double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
-        double numOfSample = xArray.length;
-        double numOfVector = zArray.length;
-        polylines = new ArrayList<>();
-        polygrp = new Group();
-        for (int vector = 0; vector < numOfVector; vector++) {
-            Double[]  Data = new Double[(int) (2 * numOfSample)];
-            for(int i=0; i < 2*numOfSample; i=i+2) {
-                Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
-                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[vector][i/2] - ((minY*sizeY)/cofY)));
+            plotHoldon(xArray, zArray, yArray, color,list);}
+        else{
+            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+            maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+            cofY = Math.abs(maxY - minY);
+            double cofX = Math.round(((Arrays.stream(xArray).max().getAsDouble() - Arrays.stream(xArray).min().getAsDouble())));
+            double cofZ = Math.round(((Arrays.stream(zArray).max().getAsDouble() - Arrays.stream(zArray).min().getAsDouble())));
+            double numOfSample = xArray.length;
+            double numOfVector = zArray.length;
+            polylines = new ArrayList<>();
+            polygrp = new ArrayList();
+            list.forEach(vector -> {
+                Double[]  Data = new Double[(int) (2 * numOfSample)];
+                for(int i=0; i < 2*numOfSample; i=i+2) {
+                    Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
+                    Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[(int)vector][i/2] - ((minY*sizeY)/cofY)));
 //                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
 
-            }
-            Polyline polyline = new Polyline();
+                }
+                Polyline polyline = new Polyline();
 //            polyline.strokeProperty().bind(colorPicker.valueProperty());
-            polyline.setStroke(color);
-            if (color == Color.TRANSPARENT) {
-                polyline.setStroke(Color.color(Math.random(),Math.random(),Math.random()));
+                polyline.setStroke(color);
+                int finalVector = (int)vector;
+                if (color == Color.TRANSPARENT) {
+
+                    polyline.setStroke(colors.get(finalVector % 7));
+                }
+                polyline.setTranslateY(0.75 * sizeY);
+                polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector));
+                polyline.getPoints().addAll(Data);
+                polyline.setOpacity(0.5);
+
+                polyline.setOnMouseEntered(event ->
+                {
+                    polyline.strokeWidthProperty().unbind();
+                    polyline.opacityProperty().unbind();
+                    polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
+                    polyline.setOpacity(1);
+                    mouseTip.setText(String.valueOf(finalVector+1));
+                });
+                polyline.setOnMouseExited(event ->
+                {
+                    polyline.strokeWidthProperty().bind(strokewidth);
+                    polyline.opacityProperty().bind(opacity);
+                    });
+                polyline.setOnMouseClicked(event -> {
+                    if (!focusmode) {
+                        polylines.forEach(event2 -> {
+                            event2.setVisible(false);
+                        });
+                        polyline.setVisible(true);
+                        focusmode =true;
+                        mouseTip.setText(String.valueOf(finalVector+1));
+                    } else {
+                        polylines.forEach(event2 -> {
+                            event2.setVisible(true);
+                            focusmode =false;
+                        });
+                        mouseTip.setText("");
+                    }
+                });
+                polyline.strokeWidthProperty().bind(strokewidth);
+                polyline.opacityProperty().bind(opacity);
+                polylines.add(polyline);
+
+            });
+            if(rePlot){
+                plottedElements.getChildren().clear();
+                rePlot = false;
             }
-            polyline.setTranslateY(0.75 * sizeY);
-            polyline.setTranslateZ(-sizeZ/2 +vector*sizeZ/(numOfVector));
-            polyline.getPoints().addAll(Data);
-            polyline.setOpacity(0.5);
-            polyline.setOnMouseEntered(event ->
-                    {
-                        polyline.strokeWidthProperty().unbind();
-                        polyline.opacityProperty().unbind();
-                        polyline.setStrokeWidth(1.5*(double)strokewidth.getValue());
-                        polyline.setOpacity(1);});
-            polyline.setOnMouseExited(event ->
-                    {
-                        polyline.strokeWidthProperty().bind(strokewidth);
-                        polyline.opacityProperty().bind(opacity);});
-            polyline.strokeWidthProperty().bind(strokewidth);
-            polyline.opacityProperty().bind(opacity);
-            polylines.add(polyline);
-        }
-        polygrp.getChildren().addAll(polylines);
+            plottedElements.getChildren().addAll(polylines);
 
-        if(rePlot){
-            plottedElements.getChildren().clear();
+            this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
+                    minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
+                    zArray);
 
-            rePlot = false;
-        }
-
-        plottedElements.getChildren().addAll(polygrp);
-
-        this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
-                minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
-                zArray);
-
-        rePlot = true;}
+            rePlot = true;}
     }
+
+    private void putLabel(MouseEvent event) {
+//        Label labelPosition = new Label();
+//        Point2D mouseSceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
+//        double x = cube.sceneToLocal(mouseSceneCoords).getX();
+//        double y = cube.sceneToLocal(mouseSceneCoords).getY();
+//        labelPosition.setText(String.format("x: %.2f", x) + "\n" + String.format("y: %.2f", y));
+//        labelPosition.setVisible(true);
+        mouseTip.setTranslateX(event.getX());
+        mouseTip.setTranslateY(event.getY());
+//        this.getCube().getChildren().add(labelPosition);
+        mouseTip.setText(event.toString());
+    }
+
     public void plotSurface(double[] xArray, double[] zArray, double[][] yArray) {
         this.XArray = xArray;
         this.ZArray = zArray;

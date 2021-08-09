@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.collections.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import org.controlsfx.control.CheckComboBox?>
 
-<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" >
+<?import org.controlsfx.control.RangeSlider?>
+<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
   <tabs>
     <Tab fx:id="tab1" text="3D View">
       <content>
@@ -28,29 +44,19 @@
                               <Insets bottom="10.0" top="10.0" />
                            </padding>
                            <children>
-                              <ToolBar prefHeight="57.0" prefWidth="600.0">
+                              <ToolBar fx:id="toolbar3d" prefHeight="61.0" prefWidth="600.0">
                                  <items>
-                                    <ChoiceBox fx:id="dataChoicer" prefWidth="150.0">
-                                     <items>
-                                         <FXCollections fx:factory="observableArrayList">
-                                             <String fx:value="Data" />
-                                             <String fx:value="Fit" />
-                                             <String fx:value="Residue" />
-                                         </FXCollections>
-                                     </items>
-                                    </ChoiceBox>
+                                    <CheckComboBox fx:id="dataChoicer" prefWidth="150.0"/>
                                     <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="0.0">
                                        <padding>
                                           <Insets left="5.0" />
-                                       </padding></Separator>
-                                    <RadioButton fx:id="holdon" mnemonicParsing="false" text="Hold On">
-                                       <padding>
-                                          <Insets left="10.0" />
-                                       </padding></RadioButton>
+                                       </padding>
+                                    </Separator>
                                     <Separator orientation="VERTICAL" prefHeight="26.0" prefWidth="3.0">
                                        <padding>
                                           <Insets left="5.0" />
-                                       </padding></Separator>
+                                       </padding>
+                                    </Separator>
                                     <RadioButton fx:id="rainbow" mnemonicParsing="false" text="Colorful">
                                        <padding>
                                           <Insets left="10.0" />
@@ -59,15 +65,28 @@
                                     <Separator orientation="VERTICAL" prefHeight="10.0">
                                        <padding>
                                           <Insets left="5.0" />
-                                       </padding></Separator>
+                                       </padding>
+                                    </Separator>
                                     <Label text="Line Width:" />
                                     <Slider fx:id="lineWidth" max="1.0" min="0.1" prefHeight="14.0" prefWidth="80.0" value="0.5" />
                                     <Separator orientation="VERTICAL" prefHeight="10.0">
                                        <padding>
                                           <Insets left="5.0" />
-                                       </padding></Separator>
+                                       </padding>
+                                    </Separator>
                                     <Label text="Opacity" />
                                     <Slider fx:id="opacity" max="1.0" min="0.1" prefWidth="80.0" value="0.5" />
+                                    <Separator prefHeight="10.0" prefWidth="10.0" />
+                                    <RadioButton mnemonicParsing="false" text="XY Plane" fx:id="xy" />
+                                    <RadioButton fx:id="yz" mnemonicParsing="false" text="YZ Plane" />
+                                    <RadioButton mnemonicParsing="false" text="XZ Plane" fx:id="xz" />
+                                    <Separator orientation="VERTICAL" prefHeight="10.0" />
+                                    <CheckComboBox fx:id="signalSelection" prefHeight="26.0" prefWidth="176.0" />
+                                    <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
+                                     <Label text="Horizontal zoom: " />
+                                     <RangeSlider fx:id="rangeSlider" prefHeight="26.0" prefWidth="276.0" />
+                                     <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
+                                     <Label text="Current Signal: " />
                                  </items>
                                  <opaqueInsets>
                                     <Insets bottom="10.0" top="10.0" />
@@ -78,7 +97,7 @@
                               </ToolBar>
                            </children>
                            <opaqueInsets>
-                              <Insets />
+                              <Insets bottom="5.0" />
                            </opaqueInsets>
                         </GridPane>
                      </top>

@@ -40,6 +40,10 @@ public class Chart {
     private Group chart = new Group();
     private LineChart linechart;
 
+    public LineChart getLinechart() {
+        return linechart;
+    }
+
     private XYChart.Series series = new XYChart.Series();
     private int xAxislowerBound;
     private int xAxisUpperBound;
