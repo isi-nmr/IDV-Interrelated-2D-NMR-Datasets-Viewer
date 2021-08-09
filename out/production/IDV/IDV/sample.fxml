@@ -1,28 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
-<?import javafx.collections.FXCollections?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.RadioButton?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.StackPane?>
-<?import org.controlsfx.control.CheckComboBox?>
+<?import java.lang.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<?import org.controlsfx.control.RangeSlider?>
-<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="IDV.Controller">
   <tabs>
     <Tab fx:id="tab1" text="3D View">
       <content>
@@ -46,12 +30,18 @@
                            <children>
                               <ToolBar fx:id="toolbar3d" prefHeight="61.0" prefWidth="600.0">
                                  <items>
-                                    <CheckComboBox fx:id="dataChoicer" prefWidth="150.0"/>
-                                    <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="0.0">
+                                    <CheckBox fx:id="datacheck" mnemonicParsing="false" text="Data">
                                        <padding>
-                                          <Insets left="5.0" />
+                                          <Insets right="5.0" />
                                        </padding>
-                                    </Separator>
+                                    </CheckBox>
+                                    <CheckBox fx:id="fitcheck" mnemonicParsing="false" text="Fit">
+                                       <padding>
+                                          <Insets right="5.0" />
+                                       </padding>
+                                    </CheckBox>
+                                    <CheckBox fx:id="rescheck" mnemonicParsing="false" text="Residue" />
+
                                     <Separator orientation="VERTICAL" prefHeight="26.0" prefWidth="3.0">
                                        <padding>
                                           <Insets left="5.0" />
@@ -81,10 +71,10 @@
                                     <RadioButton fx:id="yz" mnemonicParsing="false" text="YZ Plane" />
                                     <RadioButton mnemonicParsing="false" text="XZ Plane" fx:id="xz" />
                                     <Separator orientation="VERTICAL" prefHeight="10.0" />
-                                    <CheckComboBox fx:id="signalSelection" prefHeight="26.0" prefWidth="176.0" />
-                                    <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
                                      <Label text="Horizontal zoom: " />
-                                     <RangeSlider fx:id="rangeSlider" prefHeight="26.0" prefWidth="276.0" />
+                                    <TextField fx:id="from" prefWidth="40.0" />
+                                    <Label text="to" />
+                                    <TextField fx:id="to" prefWidth="40.0" />
                                      <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
                                      <Label text="Current Signal: " />
                                  </items>
@@ -103,7 +93,10 @@
                      </top>
                      <opaqueInsets>
                         <Insets top="10.0" />
-                     </opaqueInsets></BorderPane>
+                     </opaqueInsets>
+                     <left>
+                        <ListView fx:id="signalList" editable="true" BorderPane.alignment="CENTER" />
+                     </left></BorderPane>
                </children></AnchorPane>
       </content>
     </Tab>
