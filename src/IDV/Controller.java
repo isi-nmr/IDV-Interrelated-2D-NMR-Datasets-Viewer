@@ -1,5 +1,7 @@
 package IDV;
 
+import com.ericbarnhill.niftijio.NiftiVolume;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -15,10 +17,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import org.NifTiMRS.JsonExtention;
+import org.NifTiMRS.NiftiMRS;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.RangeSlider;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -77,6 +84,8 @@ public class Controller implements Initializable {
     RangeSlider rangeSlider;
     @FXML
     ToolBar toolbar3d;
+    @FXML
+    Button open;
 
     private Color color;
     private ArrayList selectedSignals = new ArrayList();
@@ -109,6 +118,13 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        open.setOnAction(e -> {
+            try {
+                openfile();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
         rangeSlider.setMin(0);
         rangeSlider.setMax(xArray.length);
         dataChoicer.getItems().add("Data");
@@ -476,7 +492,75 @@ public class Controller implements Initializable {
 
     }
 
+    private void openfile() throws IOException {
 
+        FileChooser dc = new FileChooser();
+        dc.setInitialDirectory(new File(System.getProperty("user.home")));
+        File file = dc.showOpenDialog(null);
+        if(file == null || ! file.isFile()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText("Could not open file");
+            alert.setContentText("The file is invalid.");
+            alert.showAndWait();
+        } else {
+            new Thread() {
+                @Override
+                public void run() {
+                    NiftiMRS niftiMrsObj = null;
+                    try {
+                        niftiMrsObj = NiftiMRS.read(file.getPath());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    NiftiVolume niftiObj = niftiMrsObj.getNifti();
+                    JsonExtention jsonObj = niftiMrsObj.getJson();
+//            endOfFileEncountered = false;
+//            // The following is arbitrary.
+//            tempData.setStepTime(niftiObj.getHeader2().pixdim[4]*1000);
+//            tempData.setNucleus(jsonObj.getResonantNucleus()[0]);
+//            tempData.B0 = 0;
+//            tempData.setTransmitterFrequency(jsonObj.getSpectrometerFrequency()[0]*10e5);
+//            tempData.setEchoes(false);
+                    // I don't know how big the file is going to be, so I reserve some space.
+                    long[] dims = niftiObj.getHeader2().dim;
+                    int signalCounter = 0;
+                    for (int o = 1; o < 8; o++)
+                        if (dims[o] == 0)
+                            dims[o] = 1;
+                    DataHolder.getInstance().xArrTD = new double[(int) dims[4]];
+                    for (int i = 0; i < dims[4]; i++) {
+                        DataHolder.getInstance().xArrTD[i] = niftiObj.getHeader2().pixdim[4] * 1000 * i;
+                    }
+                    double[][] signals = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+                    double[][] signalsi = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+                    for (int i = 0; i < dims[1]; i++) {
+                        for (int j = 0; j < dims[2]; j++) {
+                            for (int k = 0; k < dims[3]; k++) {
+                                for (int l = 0; l < dims[5]; l++) {
+                                    for (int m = 0; m < dims[6]; m++) {
+                                        for (int n = 0; n < dims[7]; n++) {
+                                            for (int p = 0; p < dims[4]; p++) {
+                                                signals[signalCounter][p] = niftiObj.getData().get(new int[]{i, j, k, p, l, m, n});
+                                                signalsi[signalCounter][p] = niftiObj.getData().get(new int[]{i + 1, j, k, p, l, m, n});
+                                            }
+                                            signalCounter++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    DataHolder.getInstance().setDataTD(signals);
+                    DataHolder.getInstance().setDataTDi(signalsi);
+                    DataHolder.getInstance().yArrTD = new double[signalCounter];
+                    for (int i = 0; i < signalCounter; i++) {
+                        DataHolder.getInstance().yArrTD[i] = i;
+                    }
+                    Platform.runLater(() -> plotter() );
+                }
+            }.start();
+        }
+    }
 
 
     private double[][][][] createParam() {
