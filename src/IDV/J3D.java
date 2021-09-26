@@ -35,6 +35,11 @@ import java.util.List;
 
 public class J3D {
     private final LinkedList<Color> colors;
+
+    public LinkedList<Color> getColors() {
+        return colors;
+    }
+
     private Label mouseTip = new Label("");
     private double sceneSizeX = 800;
     private double sceneSizeY = 600;
@@ -387,7 +392,7 @@ public class J3D {
             textZ.setTranslateZ(+zindx*(sizeZ/(zSeriesArray.length))-sizeZ/2);
             textZ.setRotationAxis(Rotate.X_AXIS);
             textZ.setRotate(0);
-            label.getChildren().addAll(textZ);
+//            label.getChildren().addAll(textZ);
             zindx++;
         }
 

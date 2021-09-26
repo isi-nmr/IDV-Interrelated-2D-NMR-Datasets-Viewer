@@ -1,5 +1,6 @@
 package IDV;
 
+import javafx.animation.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -8,6 +9,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.PickResult;
@@ -16,14 +18,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 import javafx.stage.Window;
+import javafx.util.Duration;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.RangeSlider;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.ResourceBundle;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -79,6 +79,17 @@ public class Controller implements Initializable {
     @FXML
     CheckBox rescheck;
     @FXML
+    CheckBox re;
+    @FXML
+    CheckBox im;
+
+    @FXML
+    CheckBox mag;
+    @FXML
+    CheckBox ph;
+
+
+    @FXML
     TextField from;
     @FXML
     TextField to;
@@ -95,6 +106,7 @@ public class Controller implements Initializable {
     private ArrayList selectedSignals = new ArrayList();
     private int max_slider;
     private int min_slider;
+    private ArrayList<CheckBox> checklist;
 
     public Window getWindow() {
         return window;
@@ -115,6 +127,7 @@ public class Controller implements Initializable {
     private Integer colIndex = 0;
     private Integer rowIndex = 0;
     double[][] data = DataHolder.getInstance().dataFD;
+    double[][] datai = DataHolder.getInstance().dataFDi;
     double[] xArray = DataHolder.getInstance().xArrFD;
     double[] yArray = DataHolder.getInstance().yArrFD;
     private boolean freqdomain = true;
@@ -122,11 +135,14 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-//        rangeSlider.setMin(0);
-//        rangeSlider.setMax(xArray.length);
-//        dataChoicer.getItems().add("Data");
-//        dataChoicer.getItems().add("Fit");
-//        dataChoicer.getItems().add("Residue");
+        checklist = new ArrayList<CheckBox>();
+        checklist.add(datacheck);
+        checklist.add(fitcheck);
+        checklist.add(rescheck);
+        checklist.add(re);
+        checklist.add(im);
+        checklist.add(mag);
+        checklist.add(ph);
         int version = getVersion();
         JHEAT heatmap = new JHEAT(800, 800);
         if(version>9) {
@@ -134,7 +150,7 @@ public class Controller implements Initializable {
             heatmap.setImage_width(600);
             chart.getLinechart().setPrefSize(600,400);
         }
-        
+
         heatmap.sethLabel(new Text("frequency"));
         heatmap.plot(data);
         heatmap.setGrid(yArray,xArray);
@@ -201,7 +217,7 @@ public class Controller implements Initializable {
         to.setText(String.valueOf(xArray.length-1));
         max_slider = Integer.valueOf(to.getText());
         min_slider = Integer.valueOf(from.getText());
-        from.setOnKeyTyped(event ->
+        from.setOnAction(event ->
         {
             try {
                 min_slider = Integer.valueOf(from.getText());
@@ -210,7 +226,7 @@ public class Controller implements Initializable {
             } catch (NumberFormatException e) {
             }
         });
-        to.setOnKeyTyped(event ->
+        to.setOnAction(event ->
         {
             try {
                 max_slider = Integer.valueOf(to.getText());
@@ -439,7 +455,13 @@ public class Controller implements Initializable {
         datacheck.setOnAction(event -> plotter());
         fitcheck.setOnAction(event -> plotter());
         rescheck.setOnAction(event -> plotter());
+        re.setSelected(true);
         datacheck.fire();
+        re.setOnAction(event -> plotter());
+        im.setOnAction(event -> plotter());
+        mag.setOnAction(event -> plotter());
+        ph.setOnAction(event -> plotter());
+
         dataChoicer2.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     switch ((String) newValue) {
@@ -513,8 +535,36 @@ public class Controller implements Initializable {
 
         dataChoicer2.setValue("Data");
 
+        signalList.setOnMouseExited(event -> {
+//
+            Transition animation = new Transition() {
+                {
+                    setCycleDuration(Duration.millis(200));
+                }
 
+                protected void interpolate(double frac) {
+                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth() );
+                }
 
+            };
+
+            animation.play();
+        });
+        signalList.setOnMouseEntered(event -> {
+            Transition animation = new Transition() {
+                {
+                    setCycleDuration(Duration.millis(200));
+                }
+
+                protected void interpolate(double frac) {
+                    signalList.setPrefWidth( frac * 200 );
+                }
+
+            };
+
+            animation.play();
+        });
+        
 
     }
 
@@ -577,41 +627,227 @@ public class Controller implements Initializable {
     public void plotter() {
         rainbow.setSelected(false);
         j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
-        if ((datacheck.isSelected() && fitcheck.isSelected()) ||
-                (datacheck.isSelected() && rescheck.isSelected()) ||
-                (datacheck.isSelected() && fitcheck.isSelected()) )
+        int c = 0;
+        for (CheckBox check: checklist) {
+            if (check.isSelected())
+                c++;
+        }
+        if (c>2)
             holdon = true;
         else {
             holdon = false;
         }
+//        if (re.isSelected() && im.isSelected())
+//            holdon = true;
+//        else {
+//            holdon = false;
+//        }
         if (datacheck.isSelected()) {
-            color = Color.RED;
             if (freqdomain || ppmunit) {
-                data = DataHolder.getInstance().dataFD;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.RED;
+                    data = DataHolder.getInstance().dataFD;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.GREEN;
+                    data = DataHolder.getInstance().dataFDi;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.VIOLET;
+                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFD[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataFDi[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.DARKGREEN;
+                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDi[i][j]
+                                    ,DataHolder.getInstance().dataFD[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             } else {
-                data = DataHolder.getInstance().dataTD;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.RED;
+                    data = DataHolder.getInstance().dataTD;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.GREEN;
+                    data = DataHolder.getInstance().dataTDi;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.VIOLET;
+                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTD[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataTDi[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.DARKGREEN;
+                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDi[i][j]
+                                    ,DataHolder.getInstance().dataTD[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             }
         }
         if (fitcheck.isSelected()) {
-            color = Color.BLUE;
             if (freqdomain || ppmunit) {
-                data = DataHolder.getInstance().dataFDFit;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.BLUE;
+                    data = DataHolder.getInstance().dataFDFit;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.ORANGE;
+                    data = DataHolder.getInstance().dataFDFiti;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.SADDLEBROWN;
+                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDFit[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataFDFiti[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.DARKSALMON;
+                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDFiti[i][j]
+                                    ,DataHolder.getInstance().dataFDFit[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             } else {
-                data = DataHolder.getInstance().dataTDFit;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.BLUE;
+                    data = DataHolder.getInstance().dataTDFit;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.ORANGE;
+                    data = DataHolder.getInstance().dataTDFiti;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.SADDLEBROWN;
+                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDFit[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataTDFiti[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.DARKSALMON;
+                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDFiti[i][j]
+                                    ,DataHolder.getInstance().dataTDFit[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             }
         }
         if (rescheck.isSelected()) {
-            color = Color.BLACK;
+
             if (freqdomain || ppmunit) {
-                data = DataHolder.getInstance().dataFDRes;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.BLACK;
+                    data = DataHolder.getInstance().dataFDRes;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.YELLOW;
+                    data = DataHolder.getInstance().dataFDResi;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.BROWN;
+                    data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDRes[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataFDResi[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.CADETBLUE;
+                    data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDResi[i][j]
+                                    ,DataHolder.getInstance().dataFDRes[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             } else {
-                data = DataHolder.getInstance().dataTDRes;
-                j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                if(re.isSelected()) {
+                    color = Color.BLACK;
+                    data = DataHolder.getInstance().dataTDRes;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                }
+                if(im.isSelected()) {
+                    color = Color.YELLOW;
+                    data = DataHolder.getInstance().dataTDResi;
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                }
+                if(mag.isSelected()) {
+                    color = Color.BROWN;
+                    data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length ; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDRes[i][j],2)
+                                    + Math.pow(DataHolder.getInstance().dataTDResi[i][j],2));
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if(ph.isSelected()) {
+                    color = Color.CADETBLUE;
+                    data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length ; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length ; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDResi[i][j]
+                                    ,DataHolder.getInstance().dataTDRes[i][j]);
+                        }
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
             }
         }
 //        dataChoicer.getCheckModel().getCheckedItems().forEach(selected -> {

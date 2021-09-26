@@ -24,6 +24,7 @@ public class Launcher {
         for (int y = 0; y < 50; y = y+1) {
             yArrayy[y] = y;
         }
+        DataHolder.getInstance().dataFDi = noiseArray2;
         DataHolder.getInstance().dataFD = noiseArray;
         DataHolder.getInstance().xArrFD = xArrayy;
         DataHolder.getInstance().yArrFD = yArrayy;
