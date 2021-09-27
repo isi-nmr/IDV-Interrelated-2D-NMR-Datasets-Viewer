@@ -2,7 +2,7 @@ package IDV;
 
 public class Launcher {
     public static void main(String[] args) {
-        createNoise();
+//        createNoise();
         Main.main(args);
     }
     private static void createNoise() {

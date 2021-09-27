@@ -19,6 +19,8 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
@@ -37,7 +39,7 @@ public class Chart {
     private final ContextMenu contextMenu;
     private NumberAxis xAxis = new NumberAxis(0,100,10);
     private NumberAxis yAxis = new NumberAxis(0,100,10);
-    private Group chart = new Group();
+    private StackPane chart = new StackPane();
     private LineChart linechart;
 
     public LineChart getLinechart() {
@@ -361,7 +363,7 @@ public class Chart {
         removeTips();
     }
 
-    public Group getChart() {
+    public StackPane getChart() {
         return chart;
     }
 }
