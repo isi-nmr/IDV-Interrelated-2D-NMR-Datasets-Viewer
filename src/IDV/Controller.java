@@ -215,8 +215,23 @@ public class Controller implements Initializable {
         tab2.setOnSelectionChanged(new EventHandler<Event>() {
             @Override
             public void handle(Event event) {
-                if (data !=null)
-                    heatmapplotter();
+                if (((Tab) event.getSource()).isSelected()) {
+                    if (data !=null)
+                        heatmapplotter();
+                } else {
+
+                }
+            }
+        });
+        tab1.setOnSelectionChanged(new EventHandler<Event>() {
+            @Override
+            public void handle(Event event) {
+                if (((Tab) event.getSource()).isSelected()) {
+                    if (data !=null)
+                        plotter();
+                } else {
+                        j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
+                }
             }
         });
 
