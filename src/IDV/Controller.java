@@ -1,11 +1,15 @@
 package IDV;
 
+
 import javafx.animation.*;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -17,11 +21,13 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import org.controlsfx.control.CheckComboBox;
-import org.controlsfx.control.RangeSlider;
 
+
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,10 +56,12 @@ public class Controller implements Initializable {
     TextArea messeageBar;
 
     boolean holdon = false;
-//    @FXML
+    //    @FXML
 //    CheckComboBox dataChoicer;
     @FXML
-    ChoiceBox dataChoicer2;
+    ChoiceBox dataChoicerTab2;
+    @FXML
+    ChoiceBox dataTypeTab2;
     @FXML
     TabPane mainTab;
     @FXML
@@ -95,18 +103,23 @@ public class Controller implements Initializable {
     TextField to;
     @FXML
     ListView signalList;
-//    @FXML
+    //    @FXML
 //    CheckComboBox signalSelection;
 //    @FXML
 //    RangeSlider rangeSlider;
     @FXML
     ToolBar toolbar3d;
+    @FXML
+    Button open;
 
     private Color color;
     private ArrayList selectedSignals = new ArrayList();
     private int max_slider;
     private int min_slider;
     private ArrayList<CheckBox> checklist;
+    private JHEAT heatmap;
+    private ObservableList<Object> signalsList;
+    private boolean rescale = false;
 
     public Window getWindow() {
         return window;
@@ -119,7 +132,6 @@ public class Controller implements Initializable {
     private Window window;
 
 
-
     Chart chart = new Chart();
     ArrayList<PickResult> pickResults = new ArrayList<>();
     private int item_meta;
@@ -130,8 +142,10 @@ public class Controller implements Initializable {
     double[][] datai = DataHolder.getInstance().dataFDi;
     double[] xArray = DataHolder.getInstance().xArrFD;
     double[] yArray = DataHolder.getInstance().yArrFD;
-    private boolean freqdomain = true;
+    private boolean freqdomain = false;
     private boolean ppmunit = false;
+    private boolean freqdomain2 = false;
+    private boolean ppmunit2 = false;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -144,108 +158,102 @@ public class Controller implements Initializable {
         checklist.add(mag);
         checklist.add(ph);
         int version = getVersion();
-        JHEAT heatmap = new JHEAT(800, 800);
-        if(version>9) {
+        heatmap = new JHEAT(800, 800);
+        if (version > 9) {
             heatmap.setImage_height(600);
             heatmap.setImage_width(600);
-            chart.getLinechart().setPrefSize(600,400);
+            chart.getLinechart().setPrefSize(600, 400);
         }
 
         heatmap.sethLabel(new Text("frequency"));
-        heatmap.plot(data);
-        heatmap.setGrid(yArray,xArray);
-        grid_center.add(heatmap.getFrame(),0,0);
+        grid_center.add(heatmap.getFrame(), 0, 0);
         plotChart(heatmap.getRoot());
 
-        chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2,event.getScreenX(),event.getScreenY()));
-        grid_center.add(chart.getChart(),1,0);
-        HBox.setHgrow(chart.getChart(),Priority.ALWAYS);
-//        grid_center.setGridLinesVisible(true);
-//        heatmap.getFrame().setGridLinesVisible(true);
+        chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2, event.getScreenX(), event.getScreenY()));
+        grid_center.add(chart.getChart(), 1, 0);
+        HBox.setHgrow(chart.getChart(), Priority.ALWAYS);
+//
 
-        j3D = new J3D(400,400,400);
+        //
+
+        //
+
+        //
+
+        //                        grid_center.setGridLinesVisible(true);
+
+        //                        heatmap.getFrame().setGridLinesVisible(true);
+
+        //
+
+        //
+
+        //
+
+        j3D = new J3D(400, 400, 400);
         j3D.strokewidth = lineWidth.valueProperty();
         j3D.opacity = opacity.valueProperty();
         j3D.setWindow(window);
         heatmap.setWindow(window);
-//        colorPicker.setValue(Color.RED);
-//        j3D.setColorPicker(colorPicker);
         borderPane1.setCenter(j3D.getScene());
         toolbar3d.getItems().add(j3D.getMouseTip());
         j3D.getScene().heightProperty().bind(anchorPane1.heightProperty());
         j3D.getScene().widthProperty().bind(anchorPane1.widthProperty());
         j3D.getCube().requestFocus();
-        final ObservableList<String> signalsList = FXCollections.observableArrayList();
-        signalsList.add("All");
-        for (int i = 1; i <= yArray.length; i++) {
-            signalsList.add("Signal " + i);
-        }
-        signalList.getItems().setAll(signalsList);
-        signalList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-//        signalSelection.getItems().addAll(signalsList);
-        for (int i = 0; i < yArray.length; i++) {
-            selectedSignals.add(i);
-        }
-//        signalSelection.getCheckModel().getCheckedItems().addListener(new ListChangeListener() {
-//            @Override
-//            public void onChanged(Change c) {
-//                if (signalSelection.getCheckModel().getCheckedIndices().size() == 0) {
-//                    for (int i = 0; i < yArray.length; i++) {
-//                        selectedSignals.add(i);
-//                    }
-//                    plotter();
-//                } else {
-//                    selectedSignals = (ArrayList) signalSelection.getCheckModel().getCheckedIndices().stream().collect(Collectors.toList());
-//                    plotter();
-//                }
-//            }
-//        });
-        signalList.setOnMouseClicked(event -> {
-                if (signalList.getSelectionModel().isSelected(0)) {
-                    selectedSignals.clear();
-                    for (int i = 0; i < yArray.length; i++) {
-                        selectedSignals.add(i);
-                    }
-                    plotter();
+
+        tab2.setOnSelectionChanged(new EventHandler<Event>() {
+            @Override
+            public void handle(Event event) {
+                if (((Tab) event.getSource()).isSelected()) {
+                    if (data != null)
+                        heatmapplotter();
                 } else {
-                    selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x=(int)x-1).collect(Collectors.toList());
-                    plotter();
+
                 }
+            }
+        });
+        tab1.setOnSelectionChanged(new EventHandler<Event>() {
+            @Override
+            public void handle(Event event) {
+                if (((Tab) event.getSource()).isSelected()) {
+                    if (data != null)
+                        plotter();
+                } else {
+                    j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
+                }
+            }
+        });
+
+        signalList.setOnMouseClicked(event -> {
+            if (signalList.getSelectionModel().isSelected(0)) {
+                selectedSignals.clear();
+                for (int i = 0; i < yArray.length; i++) {
+                    selectedSignals.add(i);
+                }
+                plotter();
+            } else {
+                selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
+                plotter();
+            }
 
         });
-        from.setText(String.valueOf(0));
-        to.setText(String.valueOf(xArray.length-1));
-        max_slider = Integer.valueOf(to.getText());
-        min_slider = Integer.valueOf(from.getText());
-        from.setOnAction(event ->
-        {
+
+        from.setOnAction(event -> {
             try {
                 min_slider = Integer.valueOf(from.getText());
-                if(max_slider>0 && max_slider > min_slider )
-                plotter();
+                if (max_slider > 0 && max_slider > min_slider)
+                    plotter();
             } catch (NumberFormatException e) {
             }
         });
-        to.setOnAction(event ->
-        {
+        to.setOnAction(event -> {
             try {
                 max_slider = Integer.valueOf(to.getText());
-                if(max_slider<xArray.length && max_slider > min_slider )
-                   plotter();
+                if (max_slider < xArray.length && max_slider > min_slider)
+                    plotter();
             } catch (NumberFormatException e) {
             }
         });
-
-//        j3D.getRoot().getChildren().get(j3D.getPolygrp())
-//        j3D.getPolygrp().getChildren().forEach(e -> e.setOnMouseClicked(event -> {
-//            System.out.println("hi");
-//        }));
-
-//
-//                setOnMouseClicked(event -> {
-//
-//            System.out.println(event.getPickResult());
-//        });
 
         xy.setOnAction(e -> {
             xz.setSelected(false);
@@ -258,7 +266,6 @@ public class Controller implements Initializable {
                 j3D.getRotateY().setAngle(-45);
             }
         });
-
         xz.setOnAction(e -> {
             xy.setSelected(false);
             yz.setSelected(false);
@@ -270,7 +277,6 @@ public class Controller implements Initializable {
                 j3D.getRotateY().setAngle(-45);
             }
         });
-
         yz.setOnAction(e -> {
             xz.setSelected(false);
             xy.setSelected(false);
@@ -295,33 +301,33 @@ public class Controller implements Initializable {
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 Mapper.getInstance().setLogScale(logScale.isSelected());
                 heatmap.plot(data);
-                heatmap.setGrid(yArray,xArray);
+                heatmap.setGrid(yArray, xArray);
             }
         });
         j3D.setAxis_label_x(new Text(""));
         j3D.setAxis_label_z(new Text("frequency"));
         j3D.setAxis_label_y(new Text("amplitude"));
-//        j3D.plotSeries(xArray, yArray, data);
 
         Menu FDomain = new Menu("frequency domain");
         MenuItem hertz = new MenuItem("Hz");
         MenuItem ppm = new MenuItem("PPM");
-        FDomain.getItems().addAll(hertz,ppm);
+        FDomain.getItems().addAll(hertz, ppm);
         hertz.setOnAction(event -> {
-            if(!freqdomain) {
+            if (!freqdomain) {
                 freqdomain = true;
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrFD;
                 yArray = DataHolder.getInstance().yArrFD;
+                rescale = true;
                 plotter();
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("frequency"));
                 j3D.setAxis_label_y(new Text("amplitude"));
             }
-            });
+        });
 
         ppm.setOnAction(event -> {
-            if(!ppmunit) {
+            if (!ppmunit) {
                 ppmunit = true;
                 freqdomain = false;
                 xArray = DataHolder.getInstance().xArrPPM;
@@ -329,34 +335,23 @@ public class Controller implements Initializable {
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("ppm"));
                 j3D.setAxis_label_y(new Text("amplitude"));
+                rescale = true;
                 plotter();
             }
         });
         j3D.getRightClickMenu().getItems().add(FDomain);
         MenuItem TDomain = new MenuItem("time domain");
         TDomain.setOnAction(event -> {
-            if(freqdomain || ppmunit) {
+            if (freqdomain || ppmunit) {
                 freqdomain = false;
                 ppmunit = false;
                 xArray = DataHolder.getInstance().xArrTD;
                 yArray = DataHolder.getInstance().yArrTD;
+                rescale = true;
                 plotter();
-//                if (dataChoicer.getSelectionModel().getSelectedIndex() == 0){
-//                    data =  DataHolder.getInstance().dataTD;
-//                    color = Color.RED;
-//                } else if (dataChoicer.getSelectionModel().getSelectedIndex() == 1){
-//                    data =  DataHolder.getInstance().dataTDFit;
-//                    color = Color.BLUE;
-//                } else {
-//                    data =  DataHolder.getInstance().dataTDRes;
-//                    color = Color.BLACK;
-//                }
                 j3D.setAxis_label_x(new Text(""));
                 j3D.setAxis_label_z(new Text("time"));
                 j3D.setAxis_label_y(new Text("amplitude"));
-
-
-
             }
         });
         j3D.getRightClickMenu().getItems().add(TDomain);
@@ -374,167 +369,55 @@ public class Controller implements Initializable {
         Menu FDomain2 = new Menu("frequency domain");
         MenuItem hertz2 = new MenuItem("Hz");
         MenuItem ppm2 = new MenuItem("PPM");
-        FDomain2.getItems().addAll(hertz2,ppm2);
+        FDomain2.getItems().addAll(hertz2, ppm2);
         hertz2.setOnAction(event -> {
-            if(!freqdomain) {
-                freqdomain = true;
-                ppmunit = false;
+            if (!freqdomain2) {
+                freqdomain2 = true;
+                ppmunit2 = false;
                 xArray = DataHolder.getInstance().xArrFD;
                 yArray = DataHolder.getInstance().yArrFD;
-                if (dataChoicer2.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataFD;
-                } else if (dataChoicer2.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataFDFit;
-                } else {
-                    data =  DataHolder.getInstance().dataFDRes;
-                }
-
-
-                heatmap.plot(data);
-                heatmap.setGrid(yArray,xArray);
+                heatmapplotter();
             }
         });
         MenuItem PPMDomain2 = new MenuItem("ppm domain");
         ppm2.setOnAction(event -> {
-            if(!ppmunit) {
-                ppmunit = true;
-                freqdomain = false;
+            if (!ppmunit2) {
+                ppmunit2 = true;
+                freqdomain2 = false;
                 xArray = DataHolder.getInstance().xArrPPM;
                 yArray = DataHolder.getInstance().yArrFD;
-                if (dataChoicer2.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataFD;
-                } else if (dataChoicer2.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataFDFit;
-                } else {
-                    data =  DataHolder.getInstance().dataFDRes;
-                }
-                heatmap.plot(data);
-                heatmap.setGrid(yArray,xArray);
+                heatmapplotter();
             }
         });
         MenuItem TDomain2 = new MenuItem("time domain");
         TDomain2.setOnAction(event -> {
-            if(freqdomain || ppmunit) {
-                freqdomain = false;
-                ppmunit = false;
+            if (freqdomain2 || ppmunit2) {
+                freqdomain2 = false;
+                ppmunit2 = false;
                 xArray = DataHolder.getInstance().xArrTD;
                 yArray = DataHolder.getInstance().yArrTD;
-                if (dataChoicer2.getSelectionModel().getSelectedIndex() == 0){
-                    data =  DataHolder.getInstance().dataTD;
-                } else if (dataChoicer2.getSelectionModel().getSelectedIndex() == 1){
-                    data =  DataHolder.getInstance().dataTDFit;
-                } else {
-                    data =  DataHolder.getInstance().dataTDRes;
-                }
-                heatmap.plot(data);
-                heatmap.setGrid(yArray,xArray);
-
+                heatmapplotter();
             }
         });
-
 
 
         heatmap.getRightClickMenu().getItems().add(FDomain2);
         heatmap.getRightClickMenu().getItems().add(TDomain2);
 
 
-
-        AtomicBoolean flagData = new AtomicBoolean(true);
-        AtomicBoolean flagFit = new AtomicBoolean(true);
-        AtomicBoolean flagResidue = new AtomicBoolean(true);
-//        holdon.selectedProperty().addListener( (observable, oldValue, newValue) -> {
-//                flagData.set(true);
-//                flagFit.set(true);
-//                flagResidue.set(true);
-//        });
-//        dataChoicer.getCheckModel().getCheckedItems().addListener(new ListChangeListener() {
-//                                                                      @Override
-//                                                                      public void onChanged(Change c) {
-//                                                                          plotter(); };});
-//        dataChoicer.getCheckModel().check(0);
         datacheck.setOnAction(event -> plotter());
+        datacheck.setSelected(true);
         fitcheck.setOnAction(event -> plotter());
         rescheck.setOnAction(event -> plotter());
         re.setSelected(true);
-        datacheck.fire();
         re.setOnAction(event -> plotter());
         im.setOnAction(event -> plotter());
         mag.setOnAction(event -> plotter());
         ph.setOnAction(event -> plotter());
-
-        dataChoicer2.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    switch ((String) newValue) {
-                        case "Data":
-                            if (flagData.get()) {
-                                if (freqdomain||ppmunit ) {
-                                    data = DataHolder.getInstance().dataFD;
-                                    if (data != null) {
-                                        heatmap.plot(data);
-                                        heatmap.setGrid(yArray,xArray);
-                                    } else {
-                                        messeageBar.setText("Data is null");
-                                    }
-                                } else {
-                                    data = DataHolder.getInstance().dataTD;
-                                    if (data != null) {
-                                        heatmap.plot(data);
-                                        heatmap.setGrid(yArray,xArray);
-                                    } else {
-                                        messeageBar.setText("Data is null");
-                                    }
-                                }
-                            }
-                            break;
-                        case "Fit":
-
-                                if (flagFit.get()) {
-                                    if (freqdomain||ppmunit) {
-                                        data = DataHolder.getInstance().dataFDFit;
-                                        if (data != null) {
-                                            heatmap.plot(data);
-                                            heatmap.setGrid(yArray,xArray);
-                                        } else {
-                                            messeageBar.setText("Fit is null");
-                                        }
-                                    }else {
-                                        data = DataHolder.getInstance().dataTDFit;
-                                        if (data != null) {
-                                            heatmap.plot(data);
-                                            heatmap.setGrid(yArray,xArray);
-                                        } else {
-                                            messeageBar.setText("Fit is null");
-                                        }
-                                    }
-                                }
-
-                            break;
-                        case "Residue":
-                            if (flagResidue.get()) {
-                                if (freqdomain||ppmunit) {
-                                    data = DataHolder.getInstance().dataFDRes;
-                                    if (data != null) {
-                                        heatmap.plot(data);
-                                        heatmap.setGrid(yArray,xArray);
-                                    } else {
-                                        messeageBar.setText("Residue is null");
-                                    }
-                                }else {
-                                    data = DataHolder.getInstance().dataTDRes;
-                                    if (data != null) {
-                                        heatmap.plot(data);
-                                        heatmap.setGrid(yArray,xArray);
-                                    } else {
-                                        messeageBar.setText("Residue is null");
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                });
-
-        dataChoicer2.setValue("Data");
-
+        dataChoicerTab2.setOnAction(event -> heatmapplotter());
+        dataChoicerTab2.getSelectionModel().select(0);
+        dataTypeTab2.setOnAction(event -> heatmapplotter());
+        dataTypeTab2.getSelectionModel().select(0);
         signalList.setOnMouseExited(event -> {
 //
             Transition animation = new Transition() {
@@ -543,7 +426,7 @@ public class Controller implements Initializable {
                 }
 
                 protected void interpolate(double frac) {
-                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth() );
+                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth());
                 }
 
             };
@@ -557,27 +440,221 @@ public class Controller implements Initializable {
                 }
 
                 protected void interpolate(double frac) {
-                    signalList.setPrefWidth( frac * 200 );
+                    signalList.setPrefWidth(frac * 200);
                 }
 
             };
 
             animation.play();
         });
-        
+        initplotter();
+        plotter();
+        heatmapplotter();
+
 
     }
 
+    private void initplotter() {
+        signalsList = FXCollections.observableArrayList();
+        signalsList.add("All");
+        try {
+            for (int i = 1; i <= yArray.length; i++) {
+                signalsList.add("Signal " + i);
+            }
+        } catch (Exception e) {
 
+        }
+        signalList.getItems().setAll(signalsList);
+        signalList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        try {
+            for (int i = 0; i < yArray.length; i++) {
+                selectedSignals.add(i);
+            }
+        } catch (Exception e) {
+
+        }
+        from.setText(String.valueOf(0));
+        to.setText(String.valueOf(xArray.length - 1));
+        max_slider = Integer.valueOf(to.getText());
+        min_slider = Integer.valueOf(from.getText());
+    }
+
+    private void heatmapplotter() {
+        int t1 = dataChoicerTab2.getSelectionModel().getSelectedIndex();
+        int t2 = dataTypeTab2.getSelectionModel().getSelectedIndex();
+        if (t1 == 0) {
+            if (t2 == 0) {
+                if (freqdomain2 || ppmunit)
+                    data = DataHolder.getInstance().dataFD;
+                else
+                    data = DataHolder.getInstance().dataTD;
+            }
+            if (t2 == 1) {
+                if (freqdomain2 || ppmunit)
+                    data = DataHolder.getInstance().dataFDi;
+                else
+                    data = DataHolder.getInstance().dataTDi;
+            }
+
+            if (t2 == 2) {
+                if (freqdomain2 || ppmunit) {
+                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFD[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDi[i][j], 2));
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTD[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDi[i][j], 2));
+                        }
+                    }
+                }
+            }
+            if (t2 == 3) {
+                if (freqdomain2 || ppmunit) {
+                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDi[i][j]
+                                    , DataHolder.getInstance().dataFD[i][j]);
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDi[i][j]
+                                    , DataHolder.getInstance().dataTD[i][j]);
+                        }
+                    }
+                }
+            }
+        }
+        if (t1 == 1) {
+            if (t2 == 0) {
+                if (freqdomain2 || ppmunit2)
+                    data = DataHolder.getInstance().dataFDFit;
+                else
+                    data = DataHolder.getInstance().dataTDFit;
+            }
+            if (t2 == 1) {
+                if (freqdomain2 || ppmunit2)
+                    data = DataHolder.getInstance().dataFDFiti;
+                else
+                    data = DataHolder.getInstance().dataTDFiti;
+            }
+            if (t2 == 2) {
+                if (freqdomain2 || ppmunit2) {
+                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDFit[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDFiti[i][j], 2));
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDFit[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDFiti[i][j], 2));
+                        }
+                    }
+                }
+            }
+            if (t2 == 3) {
+                if (freqdomain2 || ppmunit2) {
+                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDFiti[i][j]
+                                    , DataHolder.getInstance().dataFDFit[i][j]);
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDFiti[i][j]
+                                    , DataHolder.getInstance().dataTDFit[i][j]);
+                        }
+                    }
+                }
+            }
+        }
+        if (t1 == 2) {
+            if (t2 == 0) {
+                if (freqdomain2 || ppmunit2)
+                    data = DataHolder.getInstance().dataFDRes;
+                else
+                    data = DataHolder.getInstance().dataTDRes;
+            }
+            if (t2 == 1) {
+                if (freqdomain2 || ppmunit2)
+                    data = DataHolder.getInstance().dataFDResi;
+                else
+                    data = DataHolder.getInstance().dataTDResi;
+            }
+            if (t2 == 2) {
+                if (freqdomain2 || ppmunit2) {
+                    data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDRes[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDResi[i][j], 2));
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDRes[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDResi[i][j], 2));
+                        }
+                    }
+                }
+            }
+            if (t2 == 3) {
+                if (freqdomain2 || ppmunit2) {
+                    data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataFDi[i][j]
+                                    , DataHolder.getInstance().dataFDRes[i][j]);
+                        }
+                    }
+                } else {
+                    data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDRes[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length; j++) {
+                            data[i][j] = Math.atan2(DataHolder.getInstance().dataTDResi[i][j]
+                                    , DataHolder.getInstance().dataTDRes[i][j]);
+                        }
+                    }
+                }
+            }
+        }
+        if (data != null) {
+            heatmap.plot(data);
+            heatmap.setGrid(yArray, xArray);
+        } else {
+            messeageBar.setText("Residue is null");
+        }
+    }
 
 
     private double[][][][] createParam() {
         double[][][][] noiseArray = new double[5][5][4][5];
-        for(int vy = 0; vy<5;vy++) {
-            for(int vx = 0; vx<5;vx++) {
+        for (int vy = 0; vy < 5; vy++) {
+            for (int vx = 0; vx < 5; vx++) {
                 for (int x = 0; x < 5; x = x + 1) {
                     for (int y = 0; y < 4; y = y + 1) {
-                        noiseArray[vx][vy][y][x] = (float) (10*(vx+1)*(vy+1)) * (((40 - (y+100*vx)) * Math.sin(Math.PI * 0.1 * y) + (80 - x* (y+100*vx)) * Math.sin(Math.PI * 0.1 * x)) + 20);
+                        noiseArray[vx][vy][y][x] = (float) (10 * (vx + 1) * (vy + 1)) * (((40 - (y + 100 * vx)) * Math.sin(Math.PI * 0.1 * y) + (80 - x * (y + 100 * vx)) * Math.sin(Math.PI * 0.1 * x)) + 20);
                     }
                 }
             }
@@ -587,39 +664,40 @@ public class Controller implements Initializable {
     }
 
 
-    public void selectVoxel(JHEAT root_voxel, JHEAT root_meta, double[][][][] data){
-            root_voxel.getRootBox().setOnMouseClicked(event -> {
-                Node source = event.getPickResult().getIntersectedNode();
-                    colIndex = GridPane.getColumnIndex(source);
-                    rowIndex = GridPane.getRowIndex(source);
-                if((colIndex!= null) && (rowIndex != null)) {
-                    root_meta.plotDiscreteData(data[colIndex][rowIndex]);
-                }
-            });
+    public void selectVoxel(JHEAT root_voxel, JHEAT root_meta, double[][][][] data) {
+        root_voxel.getRootBox().setOnMouseClicked(event -> {
+            Node source = event.getPickResult().getIntersectedNode();
+            colIndex = GridPane.getColumnIndex(source);
+            rowIndex = GridPane.getRowIndex(source);
+            if ((colIndex != null) && (rowIndex != null)) {
+                root_meta.plotDiscreteData(data[colIndex][rowIndex]);
+            }
+        });
     }
-
 
 
     public void plotChart(VBox root) {
 
-        root.setOnMousePressed(event -> { if (!event.isSecondaryButtonDown()) {
-            if (event.isControlDown()) {
-                PickResult a = event.getPickResult();
-                Node node = a.getIntersectedNode();
-                chart.plotHoldOn(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
-            } else {
-                PickResult a = event.getPickResult();
-                Node node = a.getIntersectedNode();
-                try {
-                    chart.plot(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
-                } catch (NumberFormatException e) {
+        root.setOnMousePressed(event -> {
+            if (!event.isSecondaryButtonDown()) {
+                if (event.isControlDown()) {
+                    PickResult a = event.getPickResult();
+                    Node node = a.getIntersectedNode();
+                    chart.plotHoldOn(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+//                    chart.getLinechart().getXAxis().setTickLength(10);
+                } else {
+                    PickResult a = event.getPickResult();
+                    Node node = a.getIntersectedNode();
+                    try {
+                        chart.plot(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+//                        chart.getLinechart().getXAxis().setTickLength(10);
+                    } catch (NumberFormatException e) {
 
+                    }
+                    messeageBar.setText("Hold Ctrl For Selecting More Signals");
                 }
-                messeageBar.setText("Hold Ctrl For Selecting More Signals");
             }
-        }
         });
-
 
 
     }
@@ -628,11 +706,11 @@ public class Controller implements Initializable {
         rainbow.setSelected(false);
         j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
         int c = 0;
-        for (CheckBox check: checklist) {
+        for (CheckBox check : checklist) {
             if (check.isSelected())
                 c++;
         }
-        if (c>2)
+        if (c > 2)
             holdon = true;
         else {
             holdon = false;
@@ -644,68 +722,100 @@ public class Controller implements Initializable {
 //        }
         if (datacheck.isSelected()) {
             if (freqdomain || ppmunit) {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.RED;
                     data = DataHolder.getInstance().dataFD;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(im.isSelected()) {
-                    color = Color.GREEN;
-                    data = DataHolder.getInstance().dataFDi;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(mag.isSelected()) {
-                    color = Color.VIOLET;
-                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFD.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFD[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataFDi[i][j],2));
-                        }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (im.isSelected()) {
+                    color = Color.GREEN;
+                    data = DataHolder.getInstance().dataFDi;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (mag.isSelected()) {
+                    color = Color.VIOLET;
+                    data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFD[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDi[i][j], 2));
+                        }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (ph.isSelected()) {
                     color = Color.DARKGREEN;
                     data = new double[DataHolder.getInstance().dataFD.length][DataHolder.getInstance().dataFD[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFD.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataFD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFD[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataFDi[i][j]
-                                    ,DataHolder.getInstance().dataFD[i][j]);
+                                    , DataHolder.getInstance().dataFD[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             } else {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.RED;
                     data = DataHolder.getInstance().dataTD;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(im.isSelected()) {
-                    color = Color.GREEN;
-                    data = DataHolder.getInstance().dataTDi;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(mag.isSelected()) {
-                    color = Color.VIOLET;
-                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTD.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTD[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataTDi[i][j],2));
-                        }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (im.isSelected()) {
+                    color = Color.GREEN;
+                    data = DataHolder.getInstance().dataTDi;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (mag.isSelected()) {
+                    color = Color.VIOLET;
+                    data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTD[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDi[i][j], 2));
+                        }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (ph.isSelected()) {
                     color = Color.DARKGREEN;
                     data = new double[DataHolder.getInstance().dataTD.length][DataHolder.getInstance().dataTD[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTD.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataTD.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTD[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataTDi[i][j]
-                                    ,DataHolder.getInstance().dataTD[i][j]);
+                                    , DataHolder.getInstance().dataTD[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
@@ -713,68 +823,100 @@ public class Controller implements Initializable {
         }
         if (fitcheck.isSelected()) {
             if (freqdomain || ppmunit) {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.BLUE;
                     data = DataHolder.getInstance().dataFDFit;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(im.isSelected()) {
-                    color = Color.ORANGE;
-                    data = DataHolder.getInstance().dataFDFiti;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(mag.isSelected()) {
-                    color = Color.SADDLEBROWN;
-                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDFit[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataFDFiti[i][j],2));
-                        }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (im.isSelected()) {
+                    color = Color.ORANGE;
+                    data = DataHolder.getInstance().dataFDFiti;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (mag.isSelected()) {
+                    color = Color.SADDLEBROWN;
+                    data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDFit[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDFiti[i][j], 2));
+                        }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (ph.isSelected()) {
                     color = Color.DARKSALMON;
                     data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataFDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDFit[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataFDFiti[i][j]
-                                    ,DataHolder.getInstance().dataFDFit[i][j]);
+                                    , DataHolder.getInstance().dataFDFit[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             } else {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.BLUE;
                     data = DataHolder.getInstance().dataTDFit;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(im.isSelected()) {
-                    color = Color.ORANGE;
-                    data = DataHolder.getInstance().dataTDFiti;
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
-                if(mag.isSelected()) {
-                    color = Color.SADDLEBROWN;
-                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDFit[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataTDFiti[i][j],2));
-                        }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (im.isSelected()) {
+                    color = Color.ORANGE;
+                    data = DataHolder.getInstance().dataTDFiti;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (mag.isSelected()) {
+                    color = Color.SADDLEBROWN;
+                    data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDFit[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDFiti[i][j], 2));
+                        }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                }
+                if (ph.isSelected()) {
                     color = Color.DARKSALMON;
                     data = new double[DataHolder.getInstance().dataTDFit.length][DataHolder.getInstance().dataTDFit[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataTDFit.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDFit[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataTDFiti[i][j]
-                                    ,DataHolder.getInstance().dataTDFit[i][j]);
+                                    , DataHolder.getInstance().dataTDFit[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
@@ -783,68 +925,100 @@ public class Controller implements Initializable {
         if (rescheck.isSelected()) {
 
             if (freqdomain || ppmunit) {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.BLACK;
                     data = DataHolder.getInstance().dataFDRes;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
-                if(im.isSelected()) {
+                if (im.isSelected()) {
                     color = Color.YELLOW;
                     data = DataHolder.getInstance().dataFDResi;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
-                if(mag.isSelected()) {
+                if (mag.isSelected()) {
                     color = Color.BROWN;
                     data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDRes[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataFDResi[i][j],2));
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataFDRes[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataFDResi[i][j], 2));
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (ph.isSelected()) {
                     color = Color.CADETBLUE;
                     data = new double[DataHolder.getInstance().dataFDRes.length][DataHolder.getInstance().dataFDRes[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataFDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataFDRes[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataFDResi[i][j]
-                                    ,DataHolder.getInstance().dataFDRes[i][j]);
+                                    , DataHolder.getInstance().dataFDRes[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             } else {
-                if(re.isSelected()) {
+                if (re.isSelected()) {
                     color = Color.BLACK;
                     data = DataHolder.getInstance().dataTDRes;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
-                if(im.isSelected()) {
+                if (im.isSelected()) {
                     color = Color.YELLOW;
                     data = DataHolder.getInstance().dataTDResi;
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
+                    }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
-                if(mag.isSelected()) {
+                if (mag.isSelected()) {
                     color = Color.BROWN;
                     data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDRes[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length ; j++) {
-                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDRes[i][j],2)
-                                    + Math.pow(DataHolder.getInstance().dataTDResi[i][j],2));
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length; j++) {
+                            data[i][j] = Math.sqrt(Math.pow(DataHolder.getInstance().dataTDRes[i][j], 2)
+                                    + Math.pow(DataHolder.getInstance().dataTDResi[i][j], 2));
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
-                if(ph.isSelected()) {
+                if (ph.isSelected()) {
                     color = Color.CADETBLUE;
                     data = new double[DataHolder.getInstance().dataTDRes.length][DataHolder.getInstance().dataTDRes[0].length];
-                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length ; i++) {
-                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length ; j++) {
+                    for (int i = 0; i < DataHolder.getInstance().dataTDRes.length; i++) {
+                        for (int j = 0; j < DataHolder.getInstance().dataTDRes[i].length; j++) {
                             data[i][j] = Math.atan2(DataHolder.getInstance().dataTDResi[i][j]
-                                    ,DataHolder.getInstance().dataTDRes[i][j]);
+                                    , DataHolder.getInstance().dataTDRes[i][j]);
                         }
+                    }
+                    if (rescale) {
+                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
@@ -887,6 +1061,7 @@ public class Controller implements Initializable {
 //        });
 
     }
+
     public double[][] getData() {
         return data;
     }
@@ -910,13 +1085,112 @@ public class Controller implements Initializable {
     public void setyArray(double[] yArray) {
         this.yArray = yArray;
     }
+
     private static int getVersion() {
         String version = System.getProperty("java.version");
-        if(version.startsWith("1.")) {
+        if (version.startsWith("1.")) {
             version = version.substring(2, 3);
         } else {
             int dot = version.indexOf(".");
-            if(dot != -1) { version = version.substring(0, dot); }
-        } return Integer.parseInt(version);
+            if (dot != -1) {
+                version = version.substring(0, dot);
+            }
+        }
+        return Integer.parseInt(version);
     }
+//    private void openfile() throws IOException {
+//        FileChooser dc = new FileChooser();
+//        dc.setInitialDirectory(new File(System.getProperty("user.home")));
+//        File file = dc.showOpenDialog(null);
+//        if(file == null || ! file.isFile()) {
+//            Alert alert = new Alert(Alert.AlertType.ERROR);
+//            alert.setHeaderText("Could not open file");
+//            alert.setContentText("The file is invalid.");
+//            alert.showAndWait();
+//        } else {
+//            new Thread() {
+//                @Override
+//                public void run() {
+//                    NiftiMRS niftiMrsObj = null;
+//                    try {
+//                        niftiMrsObj = NiftiMRS.read(file.getPath());
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                    NiftiVolume niftiObj = niftiMrsObj.getNifti();
+//                    JsonExtention jsonObj = niftiMrsObj.getJson();
+////            endOfFileEncountered = false;
+////            // The following is arbitrary.
+////            tempData.setStepTime(niftiObj.getHeader2().pixdim[4]*1000);
+////            tempData.setNucleus(jsonObj.getResonantNucleus()[0]);
+////            tempData.B0 = 0;
+////            tempData.setTransmitterFrequency(jsonObj.getSpectrometerFrequency()[0]*10e5);
+////            tempData.setEchoes(false);
+//                    // I don't know how big the file is going to be, so I reserve some space.
+//                    long[] dims = niftiObj.getHeader2().dim;
+//                    int signalCounter = 0;
+//                    for (int o = 1; o < 8; o++)
+//                        if (dims[o] == 0)
+//                            dims[o] = 1;
+//                    DataHolder.getInstance().xArrTD = new double[(int) dims[4]];
+//                    DataHolder.getInstance().xArrFD = new double[(int) dims[4]];
+//                    for (int i = 0; i < dims[4]; i++) {
+//                        DataHolder.getInstance().xArrTD[i] = niftiObj.getHeader2().pixdim[4] * 1000 * i;
+//                        DataHolder.getInstance().xArrFD[i] = (-0.5 /niftiObj.getHeader2().pixdim[4])+ (i/(dims[4]*niftiObj.getHeader2().pixdim[4]));
+//                    }
+//                    double[][] signals = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+//                    double[][] signalsi = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+//                    for (int i = 0; i < dims[1]; i++) {
+//                        for (int j = 0; j < dims[2]; j++) {
+//                            for (int k = 0; k < dims[3]; k++) {
+//                                for (int l = 0; l < dims[5]; l++) {
+//                                    for (int m = 0; m < dims[6]; m++) {
+//                                        for (int n = 0; n < dims[7]; n++) {
+//                                            for (int p = 0; p < dims[4]; p++) {
+//                                                signals[signalCounter][p] = niftiObj.getData().get(new int[]{i, j, k, p, l, m, n});
+//                                                signalsi[signalCounter][p] = niftiObj.getData().get(new int[]{i + 1, j, k, p, l, m, n});
+//                                            }
+//                                            signalCounter++;
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                    DataHolder.getInstance().setDataTD(signals);
+//                    DataHolder.getInstance().setDataTDi(signalsi);
+//                    DataHolder.getInstance().yArrTD = new double[signalCounter];
+//                    DataHolder.getInstance().yArrFD = new double[signalCounter];
+//                    for (int i = 0; i < signalCounter; i++) {
+//                        DataHolder.getInstance().yArrTD[i] = i;
+//                        DataHolder.getInstance().yArrFD[i] = i;
+//                    }
+//                    Platform.runLater(() -> {
+//                        xArray = DataHolder.getInstance().xArrTD;
+//                        yArray = DataHolder.getInstance().yArrTD;
+//                        initplotter();
+//                        plotter();
+//                        heatmapplotter();
+//                    } );
+//                    DoubleFFT_1D fft = new DoubleFFT_1D(dims[4]);
+//                    double[] signalfft = new double[(int) (dims[4] * 2)];
+//                    double[][] signalsf = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+//                    double[][] signalsfi = new double[(int) (dims[1] * dims[2] * dims[3] * dims[5] * dims[6] * dims[7])][(int) dims[4]];
+//                    for (int i = 0; i < signalCounter; i++) {
+//                        for(int s = 0; s < dims[4]; s=s+1) {
+//                            signalfft[2*s] = signals[i][s];
+//                            signalfft[2*s+1] = signalsi[i][s];
+//                        }
+//                        fft.complexForward(signalfft);
+//                        for(int s = 0; s < dims[4] ; s++) {
+//                            signalsf[i][s] = signalfft[(int) (((dims[4])+ (s * 2))%(2*dims[4]))];
+//                            signalsfi[i][s] = signalfft[(int) (((dims[4])+ (s * 2 + 1))%(2*dims[4]))];
+//                        }
+//                    }
+//                    DataHolder.getInstance().setDataFD(signalsf);
+//                    DataHolder.getInstance().setDataFDi(signalsfi);
+//                }
+//            }.start();
+//        }
+//    }
 }

@@ -5,6 +5,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -19,6 +20,10 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
@@ -37,7 +42,7 @@ public class Chart {
     private final ContextMenu contextMenu;
     private NumberAxis xAxis = new NumberAxis(0,100,10);
     private NumberAxis yAxis = new NumberAxis(0,100,10);
-    private Group chart = new Group();
+    private StackPane chart = new StackPane();
     private LineChart linechart;
 
     public LineChart getLinechart() {
@@ -167,7 +172,7 @@ public class Chart {
         removeTips();
         xAxis.setLowerBound(Arrays.stream(xArray).min().getAsDouble());
         xAxis.setUpperBound(Arrays.stream(xArray).max().getAsDouble());
-        xAxis.setTickUnit(1);
+//        xAxis.setTickUnit(1);
         minX = Arrays.stream(data).min().getAsDouble() - Math.abs(Arrays.stream(data).min().getAsDouble());
         maxY = Arrays.stream(data).max().getAsDouble() + Math.abs(Arrays.stream(data).max().getAsDouble());
         yAxis.setLowerBound(minX);
@@ -224,9 +229,10 @@ public class Chart {
                         double y = yAxis.sceneToLocal(mouseSceneCoords).getY() / yAxis.getScale() + yAxis.getUpperBound();
                         labelPosition.setText(String.format("x: %.2f", x) + "\n" + String.format("y: %.2f", y));
                         labelPosition.setVisible(true);
-                        labelPosition.setTranslateX(event.getX());
-                        labelPosition.setTranslateY(event.getY());
-                        labelsPosition.add(labelPosition);
+                        labelPosition.setTranslateX(chart.sceneToLocal(mouseSceneCoords).getX()-chart.getWidth()/2);
+                         labelPosition.setTranslateY(chart.sceneToLocal(mouseSceneCoords).getY()-chart.getHeight()/2);
+                     labelPosition.setBackground(new Background(new BackgroundFill(Color.rgb(175,238,238, 0.3), new CornerRadii(0.1), new Insets(0))));
+                     labelsPosition.add(labelPosition);
                         chart.getChildren().addAll(labelPosition);
                     }
                 if (dataTips && !event.isShiftDown() && (event.getButton() == MouseButton.PRIMARY) ) {
@@ -237,8 +243,9 @@ public class Chart {
                     double y = yAxis.sceneToLocal(mouseSceneCoords).getY() / yAxis.getScale() + yAxis.getUpperBound();
                     labelPosition.setText(String.format("x: %.2f", x) + "\n" + String.format("y: %.2f", y));
                     labelPosition.setVisible(true);
-                    labelPosition.setTranslateX(event.getX());
-                    labelPosition.setTranslateY(event.getY());
+                    labelPosition.setTranslateX(chart.sceneToLocal(mouseSceneCoords).getX()-chart.getWidth()/2);
+                    labelPosition.setTranslateY(chart.sceneToLocal(mouseSceneCoords).getY()-chart.getHeight()/2);
+                    labelPosition.setBackground(new Background(new BackgroundFill(Color.rgb(175,238,238, 0.3), new CornerRadii(0.1), new Insets(0))));
                     labelsPosition.add(labelPosition);
                     chart.getChildren().addAll(labelPosition);
                 }
@@ -357,11 +364,12 @@ public class Chart {
     }
 
     public void setDataTips(boolean dataTips) {
-        this.dataTips = dataTips;
+        if (dataTips) this.dataTips = true;
+        else this.dataTips = false;
         removeTips();
     }
 
-    public Group getChart() {
+    public StackPane getChart() {
         return chart;
     }
 }

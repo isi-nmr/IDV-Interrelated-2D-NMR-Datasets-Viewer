@@ -472,7 +472,7 @@ public class J3D {
             polyline.setStroke(color);
             polyline.setOpacity(50);
             polyline.setTranslateY(0.75 * sizeY);
-            polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector)-((1e-2)* Math.random()));
+            polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector));
             polyline.getPoints().addAll(Data);
             polyline.setStrokeWidth(0.5);
             int finalVector = (int)vector;
@@ -672,7 +672,21 @@ public class J3D {
 //
 //        rePlot = true;}
 //    }
-
+    public void rescale(double[] xArray_org, double[] zArray, double[][] data,  int min, int max){
+        double[] xArray = new double[max-min];
+        System.arraycopy(xArray_org,min,xArray, 0,max-min);
+        double[][] yArray = new double[data.length][max - min];
+        for (int i = 0; i < data.length; i++) {
+            System.arraycopy(data[i],min,yArray[i], 0,max-min);
+        }
+        minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
+        maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
+        cofY = Math.abs(maxY - minY);
+        plottedElements.getChildren().clear();
+        this.setLabelSeries(Arrays.stream(xArray).min().getAsDouble(), Arrays.stream(xArray).max().getAsDouble(),
+                minY - Math.abs(cofY/2) , maxY + Math.abs(cofY/2),
+                zArray);
+    }
     public void plotSeries(double[] xArray_org, double[] zArray, double[][] data, boolean holdon, Color color, ArrayList list, int min, int max) {
         double[] xArray = new double[max-min];
         System.arraycopy(xArray_org,min,xArray, 0,max-min);
