@@ -8,6 +8,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -181,8 +183,23 @@ public class Controller implements Initializable {
         chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2, event.getScreenX(), event.getScreenY()));
         grid_center.add(chart.getChart(), 1, 0);
         HBox.setHgrow(chart.getChart(), Priority.ALWAYS);
-//        grid_center.setGridLinesVisible(true);
-//        heatmap.getFrame().setGridLinesVisible(true);
+//
+
+        //
+
+        //
+
+        //
+
+        //                        grid_center.setGridLinesVisible(true);
+
+        //                        heatmap.getFrame().setGridLinesVisible(true);
+
+        //
+
+        //
+
+        //
 
         j3D = new J3D(400, 400, 400);
         j3D.strokewidth = lineWidth.valueProperty();
@@ -195,7 +212,13 @@ public class Controller implements Initializable {
         j3D.getScene().widthProperty().bind(anchorPane1.widthProperty());
         j3D.getCube().requestFocus();
 
-
+        tab2.setOnSelectionChanged(new EventHandler<Event>() {
+            @Override
+            public void handle(Event event) {
+                if (data !=null)
+                    heatmapplotter();
+            }
+        });
 
         signalList.setOnMouseClicked(event -> {
             if (signalList.getSelectionModel().isSelected(0)) {
@@ -649,11 +672,13 @@ public class Controller implements Initializable {
                     PickResult a = event.getPickResult();
                     Node node = a.getIntersectedNode();
                     chart.plotHoldOn(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+//                    chart.getLinechart().getXAxis().setTickLength(10);
                 } else {
                     PickResult a = event.getPickResult();
                     Node node = a.getIntersectedNode();
                     try {
                         chart.plot(xArray, data[Integer.valueOf(node.getId())], Integer.valueOf(node.getId()));
+//                        chart.getLinechart().getXAxis().setTickLength(10);
                     } catch (NumberFormatException e) {
 
                     }
