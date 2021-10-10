@@ -21,9 +21,11 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import netscape.javascript.JSObject;
 import org.NifTiMRS.JsonExtention;
 import org.NifTiMRS.NiftiMRS;
 import org.controlsfx.control.CheckComboBox;
@@ -59,7 +61,8 @@ public class Controller implements Initializable {
     ToggleButton datatips;
     @FXML
     TextArea messeageBar;
-
+    @FXML
+    RangeSlider rangeSlider;
     boolean holdon = false;
     //    @FXML
 //    CheckComboBox dataChoicer;
@@ -77,8 +80,6 @@ public class Controller implements Initializable {
     Slider lineWidth;
     @FXML
     Slider opacity;
-    @FXML
-    RadioButton xy;
     @FXML
     RadioButton yz;
     @FXML
@@ -101,11 +102,6 @@ public class Controller implements Initializable {
     @FXML
     CheckBox ph;
 
-
-    @FXML
-    TextField from;
-    @FXML
-    TextField to;
     @FXML
     ListView signalList;
     //    @FXML
@@ -118,6 +114,8 @@ public class Controller implements Initializable {
     Button opendata;
     @FXML
     Button openfit;
+    @FXML
+    TextArea json;
 
     private Color color;
     private ArrayList selectedSignals = new ArrayList();
@@ -156,6 +154,16 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+//        webView.getEngine().load("https://github.com/isi-nmr/IDV-Interrelated-2D-NMR-Datasets-Viewer/blob/standalone_dev/README.md");
+//        webView.getEngine().setJavaScriptEnabled(true);
+////        hi.setOnAction(e -> {
+////            webView.getEngine().executeScript("myFunction()");
+////        });
+
+
+
+
+
         opendata.setOnAction(e -> {
             try {
                 openfiledata();
@@ -189,7 +197,9 @@ public class Controller implements Initializable {
         heatmap.sethLabel(new Text("frequency"));
         ScrollPane scpane = new ScrollPane();
         scpane.setContent(heatmap.getFrame());
+
         grid_center.add(scpane, 0, 0);
+
         plotChart(heatmap.getRoot());
 
         chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2, event.getScreenX(), event.getScreenY()));
@@ -212,6 +222,7 @@ public class Controller implements Initializable {
         //
 
         //
+
 
         j3D = new J3D(400, 400, 400);
         j3D.strokewidth = lineWidth.valueProperty();
@@ -256,47 +267,72 @@ public class Controller implements Initializable {
         signalList.setOnMouseClicked(event -> {
             if (signalList.getSelectionModel().isSelected(0)) {
                 selectedSignals.clear();
-                for (int i = 0; i < yArray.length; i++) {
+                int max = yArray.length;
+                if((yArray.length)>64) {
+                    max = 64;
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Information Dialog");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Only 64 signals can be displayed at a time");
+                    Thread thread = new Thread(() -> {
+                        try {
+                            // Wait for 5 secs
+                            Thread.sleep(2000);
+                            if (alert.isShowing()) {
+                                Platform.runLater(() -> alert.close());
+                            }
+                        } catch (Exception exp) {
+                            exp.printStackTrace();
+                        }
+                    });
+                    thread.setDaemon(true);
+                    thread.start();
+                    Optional<ButtonType> result = alert.showAndWait();
+
+                }
+                for (int i = 0; i < max; i++) {
                     selectedSignals.add(i);
                 }
                 plotter();
             } else {
+                if (signalList.getSelectionModel().getSelectedIndices().size()>64){
+                    selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
+                    if (selectedSignals.size()>64){
+                        selectedSignals.subList(64,selectedSignals.size()).clear();
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Information Dialog");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Only 64 signals can be displayed at a time");
+                        Thread thread = new Thread(() -> {
+                            try {
+                                // Wait for 5 secs
+                                Thread.sleep(2000);
+                                if (alert.isShowing()) {
+                                    Platform.runLater(() -> alert.close());
+                                }
+                            } catch (Exception exp) {
+                                exp.printStackTrace();
+                            }
+                        });
+                        thread.setDaemon(true);
+                        thread.start();
+                        Optional<ButtonType> result = alert.showAndWait();
+                    }
+                }
                 selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
                 plotter();
             }
 
         });
 
-        from.setOnAction(event -> {
-            try {
-                min_slider = Integer.valueOf(from.getText());
-                if (max_slider > 0 && max_slider > min_slider)
-                    plotter();
-            } catch (NumberFormatException e) {
-            }
-        });
-        to.setOnAction(event -> {
-            try {
-                max_slider = Integer.valueOf(to.getText());
-                if (max_slider < xArray.length && max_slider > min_slider)
-                    plotter();
-            } catch (NumberFormatException e) {
-            }
+
+        rangeSlider.setOnMouseReleased(event -> {
+            max_slider = (int) rangeSlider.getHighValue();
+            min_slider = (int) rangeSlider.getLowValue();
+            plotter();
         });
 
-        xy.setOnAction(e -> {
-            xz.setSelected(false);
-            yz.setSelected(false);
-            if (xy.isSelected()) {
-                j3D.getRotateX().setAngle(89);
-                j3D.getRotateY().setAngle(0);
-            } else {
-                j3D.getRotateX().setAngle(20);
-                j3D.getRotateY().setAngle(-45);
-            }
-        });
         xz.setOnAction(e -> {
-            xy.setSelected(false);
             yz.setSelected(false);
             if (xz.isSelected()) {
                 j3D.getRotateX().setAngle(0);
@@ -308,7 +344,6 @@ public class Controller implements Initializable {
         });
         yz.setOnAction(e -> {
             xz.setSelected(false);
-            xy.setSelected(false);
             if (yz.isSelected()) {
                 j3D.getRotateX().setAngle(0);
                 j3D.getRotateY().setAngle(-89);
@@ -519,10 +554,11 @@ public class Controller implements Initializable {
         } catch (Exception e) {
 
         }
-        from.setText(String.valueOf(0));
-        to.setText(String.valueOf(xArray.length - 1));
-        max_slider = Integer.valueOf(to.getText());
-        min_slider = Integer.valueOf(from.getText());
+        rangeSlider.setMin(0);
+        rangeSlider.setMax(xArray.length);
+        rangeSlider.setHighValue(rangeSlider.getMax());
+        max_slider = (int) rangeSlider.getHighValue();
+        min_slider = (int) rangeSlider.getLowValue();
     }
 
     private void heatmapplotter() {
@@ -766,6 +802,7 @@ public class Controller implements Initializable {
 //        else {
 //            holdon = false;
 //        }
+
         if (datacheck.isSelected()) {
             if (freqdomain || ppmunit) {
                 if (re.isSelected()) {
@@ -1183,6 +1220,8 @@ public class Controller implements Initializable {
     }
 
     private void openfiledata() throws IOException {
+        tab1.setDisable(true);
+        tab2.setDisable(true);
         FileChooser dc = new FileChooser();
         dc.setInitialDirectory(new File(System.getProperty("user.home")));
         File file = dc.showOpenDialog(null);
@@ -1203,6 +1242,12 @@ public class Controller implements Initializable {
                     }
                     NiftiVolume niftiObj = niftiMrsObj.getNifti();
                     JsonExtention jsonObj = niftiMrsObj.getJson();
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            json.setText("Data\n"+ jsonObj.toString());
+                        }
+                    });
 //            endOfFileEncountered = false;
 //            // The following is arbitrary.
 //            tempData.setStepTime(niftiObj.getHeader2().pixdim[4]*1000);
@@ -1273,6 +1318,8 @@ public class Controller implements Initializable {
                     }
                     DataHolder.getInstance().setDataFD(signalsf);
                     DataHolder.getInstance().setDataFDi(signalsfi);
+                    tab1.setDisable(false);
+                    tab2.setDisable(false);
                 }
             }.start();
         }
@@ -1299,6 +1346,12 @@ public class Controller implements Initializable {
                     }
                     NiftiVolume niftiObj = niftiMrsObj.getNifti();
                     JsonExtention jsonObj = niftiMrsObj.getJson();
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            json.setText("\nfit\n"+jsonObj.toString());
+                        }
+                    });
 //            endOfFileEncountered = false;
 //            // The following is arbitrary.
 //            tempData.setStepTime(niftiObj.getHeader2().pixdim[4]*1000);

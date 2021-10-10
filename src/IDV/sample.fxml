@@ -7,11 +7,12 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
+<?import org.controlsfx.control.RangeSlider?>
 <TabPane fx:id="mainTab" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="IDV.Controller">
   <tabs>
       <Tab fx:id="tab0" text="File">
           <content>
-              <SplitPane focusTraversable="true" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+              <SplitPane dividerPositions="0.15" focusTraversable="true" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
                   <items>
                       <AnchorPane>
                           <children>
@@ -39,9 +40,14 @@
 <!--                          </content>-->
 <!--                      </ScrollPane>-->
                       <AnchorPane>
-                          <children>
-                              <!--                            <Label alignment="CENTER" font="$x1" layoutX="14.0" layoutY="14.0" style="&#10;" text="Details" textAlignment="CENTER" textFill="$x2" wrapText="false" />-->
-                          </children>
+                     <children>
+
+                              <TextArea fx:id="json" editable="false" prefHeight="338.0" prefWidth="447.0" promptText="json" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                           <font>
+                              <Font size="14.0" />
+                           </font></TextArea>
+
+                     </children>
                       </AnchorPane>
                   </items>
               </SplitPane>
@@ -111,14 +117,12 @@
                                     <Label text="Opacity" />
                                     <Slider fx:id="opacity" max="1.0" min="0.1" prefWidth="80.0" value="0.5" />
                                     <Separator prefHeight="10.0" prefWidth="10.0" />
-                                    <RadioButton mnemonicParsing="false" text="XY Plane" fx:id="xy" />
                                     <RadioButton fx:id="yz" mnemonicParsing="false" text="YZ Plane" />
                                     <RadioButton mnemonicParsing="false" text="XZ Plane" fx:id="xz" />
                                     <Separator orientation="VERTICAL" prefHeight="10.0" />
-                                     <Label text="Truncation(in points): " />
-                                    <TextField fx:id="from" prefWidth="60.0" />
-                                    <Label text="to" />
-                                    <TextField fx:id="to" prefWidth="60.0" />
+                                     <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
+                                     <Label text="Horizontal zoom: " />
+                                     <RangeSlider fx:id="rangeSlider" prefHeight="26.0" prefWidth="276.0" />
                                      <Separator orientation="VERTICAL" prefHeight="10.0" prefWidth="10.0" />
                                      <Label text="Current Signal: " />
                                  </items>

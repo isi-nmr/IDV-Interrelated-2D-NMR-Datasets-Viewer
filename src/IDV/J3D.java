@@ -450,14 +450,8 @@ public class J3D {
         return label;
     }
     public void plotHoldon(double[] xArray, double[] zArray, double[][] yArray, Color color, ArrayList list){
-//        if ( minY > Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble() ||
-//        maxY < Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble()) {
-//            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
-//            maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
-//            cofY = Math.abs(maxY - minY);
-//        }
         double numOfSample = xArray.length;
-        double numOfVector = zArray.length;
+        double numOfVector = list.size();
         polylines = new ArrayList<>();
         Group polygrp = new Group();
         list.forEach(vector -> {
