@@ -137,7 +137,7 @@ public class JHEAT {
         this.data = data;
         this.numbeOfResponses = data.length;
         this.numberOfPoints = data[0].length;
-        this.roll_height = (int) (image_height / numbeOfResponses);
+        this.roll_height = 1;
         this.roll_width = numberOfPoints;
         this.max = Arrays.stream(data).flatMapToDouble(Arrays::stream).max().getAsDouble();
         this.min = Arrays.stream(data).flatMapToDouble(Arrays::stream).min().getAsDouble();
@@ -146,6 +146,11 @@ public class JHEAT {
             Image colorScale = createRollImages(i);
             ImageView imageView = new ImageView(colorScale);
             imageView.setFitWidth(image_width);
+            if ((image_height / numbeOfResponses)>1) {
+                imageView.setFitHeight((image_height / numbeOfResponses));
+            } else {
+
+            }
             imageView.setId(String.valueOf(i));
             imageViewArrayList.add(imageView);
         }
@@ -198,12 +203,32 @@ public class JHEAT {
 
     private Group createVGrid(double[] vGrid) {
         Group grp = new Group();
-        for(double value : vGrid) {
-            Text text = new Text(String.format("%.1f", value));
-            double transY = value*((image_height/vGrid.length));
-            text.setTranslateY(transY);
-            grp.getChildren().add(text);
+        if (vGrid.length<50) {
+            for(double value : vGrid) {
+                Text text = new Text(String.format("%.1f", value));
 
+                double transY = 0;
+                if (image_height/vGrid.length > 1) {
+                    transY = value*((image_height/vGrid.length));
+                } else {
+                    transY = value*(1);
+                }
+                text.setTranslateY(transY);
+                grp.getChildren().add(text);
+            }
+        } else {
+            for(int value=0; value<vGrid.length;value+=(int)(vGrid.length/10)) {
+                Text text = new Text(String.format("%o", value));
+
+                double transY = 0;
+                if (image_height/vGrid.length > 1) {
+                    transY = value*((image_height/vGrid.length));
+                } else {
+                    transY = value*(1);
+                }
+                text.setTranslateY(transY);
+                grp.getChildren().add(text);
+            }
         }
         return grp;
     }

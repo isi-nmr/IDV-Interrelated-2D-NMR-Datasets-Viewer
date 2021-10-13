@@ -158,7 +158,7 @@ public class Controller implements Initializable {
         checklist.add(mag);
         checklist.add(ph);
         int version = getVersion();
-        heatmap = new JHEAT(800, 800);
+        heatmap = new JHEAT(700, 700);
         if (version > 9) {
             heatmap.setImage_height(600);
             heatmap.setImage_width(600);
@@ -166,7 +166,9 @@ public class Controller implements Initializable {
         }
 
         heatmap.sethLabel(new Text("frequency"));
-        grid_center.add(heatmap.getFrame(), 0, 0);
+        ScrollPane scpane = new ScrollPane();
+        scpane.setContent(heatmap.getFrame());
+        grid_center.add(scpane, 0, 0);
         plotChart(heatmap.getRoot());
 
         chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2, event.getScreenX(), event.getScreenY()));
@@ -205,8 +207,12 @@ public class Controller implements Initializable {
             @Override
             public void handle(Event event) {
                 if (((Tab) event.getSource()).isSelected()) {
-                    if (data != null)
-                        heatmapplotter();
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            heatmapplotter();
+                        }
+                    });
                 } else {
 
                 }
@@ -216,7 +222,7 @@ public class Controller implements Initializable {
             @Override
             public void handle(Event event) {
                 if (((Tab) event.getSource()).isSelected()) {
-                    if (data != null)
+ //                   if (data != null)
                         plotter();
                 } else {
                     j3D.getPlottedElements().getChildren().removeIf(o -> o instanceof Polyline);
@@ -405,15 +411,29 @@ public class Controller implements Initializable {
         heatmap.getRightClickMenu().getItems().add(TDomain2);
 
 
-        datacheck.setOnAction(event -> plotter());
+        datacheck.setOnAction(event -> {
+            if (data != null) plotter();
+        });
         datacheck.setSelected(true);
-        fitcheck.setOnAction(event -> plotter());
-        rescheck.setOnAction(event -> plotter());
+        fitcheck.setOnAction(event -> {
+            if (data != null) plotter();
+        });
+        rescheck.setOnAction(event -> {
+            if (data != null) plotter();
+        });
         re.setSelected(true);
-        re.setOnAction(event -> plotter());
-        im.setOnAction(event -> plotter());
-        mag.setOnAction(event -> plotter());
-        ph.setOnAction(event -> plotter());
+        re.setOnAction(event -> {
+            if (data != null) plotter();
+        });
+        im.setOnAction(event -> {
+            if (data != null) plotter();
+        });
+        mag.setOnAction(event -> {
+            if (data != null) plotter();
+        });
+        ph.setOnAction(event -> {
+            if (data != null) plotter();
+        });
         dataChoicerTab2.setOnAction(event -> heatmapplotter());
         dataChoicerTab2.getSelectionModel().select(0);
         dataTypeTab2.setOnAction(event -> heatmapplotter());
@@ -467,9 +487,16 @@ public class Controller implements Initializable {
         signalList.getItems().setAll(signalsList);
         signalList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         try {
-            for (int i = 0; i < yArray.length; i++) {
-                selectedSignals.add(i);
+            if (yArray.length < 50) {
+                for (int i = 0; i < yArray.length; i++) {
+                    selectedSignals.add(i);
+                }
+            } else {
+                for (int i = 0; i < 50; i++) {
+                    selectedSignals.add(i);
+                }
             }
+
         } catch (Exception e) {
 
         }
@@ -725,20 +752,24 @@ public class Controller implements Initializable {
                 if (re.isSelected()) {
                     color = Color.RED;
                     data = DataHolder.getInstance().dataFD;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data != null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (im.isSelected()) {
                     color = Color.GREEN;
                     data = DataHolder.getInstance().dataFDi;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data != null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (mag.isSelected()) {
                     color = Color.VIOLET;
@@ -749,11 +780,13 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataFDi[i][j], 2));
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data != null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (ph.isSelected()) {
                     color = Color.DARKGREEN;
@@ -764,30 +797,34 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataFD[i][j]);
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data != null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             } else {
                 if (re.isSelected()) {
                     color = Color.RED;
                     data = DataHolder.getInstance().dataTD;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (im.isSelected()) {
                     color = Color.GREEN;
                     data = DataHolder.getInstance().dataTDi;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (mag.isSelected()) {
                     color = Color.VIOLET;
@@ -798,11 +835,12 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataTDi[i][j], 2));
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (ph.isSelected()) {
                     color = Color.DARKGREEN;
@@ -813,11 +851,12 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataTD[i][j]);
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
             }
         }
@@ -826,20 +865,22 @@ public class Controller implements Initializable {
                 if (re.isSelected()) {
                     color = Color.BLUE;
                     data = DataHolder.getInstance().dataFDFit;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (im.isSelected()) {
                     color = Color.ORANGE;
                     data = DataHolder.getInstance().dataFDFiti;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (mag.isSelected()) {
                     color = Color.SADDLEBROWN;
@@ -850,12 +891,14 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataFDFiti[i][j], 2));
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
-                }
+                    }
                 if (ph.isSelected()) {
                     color = Color.DARKSALMON;
                     data = new double[DataHolder.getInstance().dataFDFit.length][DataHolder.getInstance().dataFDFit[0].length];
@@ -865,30 +908,36 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataFDFit[i][j]);
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
                     j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    }
                 }
             } else {
                 if (re.isSelected()) {
                     color = Color.BLUE;
                     data = DataHolder.getInstance().dataTDFit;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (im.isSelected()) {
                     color = Color.ORANGE;
                     data = DataHolder.getInstance().dataTDFiti;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (mag.isSelected()) {
                     color = Color.SADDLEBROWN;
@@ -899,11 +948,13 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataTDFiti[i][j], 2));
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
                 if (ph.isSelected()) {
                     color = Color.DARKSALMON;
@@ -914,11 +965,13 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataTDFit[i][j]);
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             }
         }
@@ -928,20 +981,24 @@ public class Controller implements Initializable {
                 if (re.isSelected()) {
                     color = Color.BLACK;
                     data = DataHolder.getInstance().dataFDRes;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
                 if (im.isSelected()) {
                     color = Color.YELLOW;
                     data = DataHolder.getInstance().dataFDResi;
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
                 }
                 if (mag.isSelected()) {
                     color = Color.BROWN;
@@ -952,11 +1009,12 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataFDResi[i][j], 2));
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (ph.isSelected()) {
                     color = Color.CADETBLUE;
@@ -967,30 +1025,34 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataFDRes[i][j]);
                         }
                     }
-                    if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
-                        rescale = false;
+                    if (data!=null) {
+                        if (rescale) {
+                            j3D.rescale(xArray, yArray, data, min_slider, max_slider);
+                            rescale = false;
+                        }
+                        j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
                 }
             } else {
                 if (re.isSelected()) {
                     color = Color.BLACK;
                     data = DataHolder.getInstance().dataTDRes;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);}
                 }
                 if (im.isSelected()) {
                     color = Color.YELLOW;
                     data = DataHolder.getInstance().dataTDResi;
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, 's', selectedSignals, min_slider, max_slider);}
                 }
                 if (mag.isSelected()) {
                     color = Color.BROWN;
@@ -1001,11 +1063,12 @@ public class Controller implements Initializable {
                                     + Math.pow(DataHolder.getInstance().dataTDResi[i][j], 2));
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
                 if (ph.isSelected()) {
                     color = Color.CADETBLUE;
@@ -1016,11 +1079,12 @@ public class Controller implements Initializable {
                                     , DataHolder.getInstance().dataTDRes[i][j]);
                         }
                     }
+                    if (data!=null) {
                     if (rescale) {
-                        j3D.rescale(xArray, yArray, data ,min_slider, max_slider);
+                        j3D.rescale(xArray, yArray, data, min_slider, max_slider);
                         rescale = false;
                     }
-                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);
+                    j3D.plotSeries(xArray, yArray, data, holdon, color, selectedSignals, min_slider, max_slider);}
                 }
             }
         }
