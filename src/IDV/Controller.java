@@ -501,35 +501,36 @@ public class Controller implements Initializable {
         dataChoicerTab2.getSelectionModel().select(0);
         dataTypeTab2.setOnAction(event -> heatmapplotter());
         dataTypeTab2.getSelectionModel().select(0);
-        signalList.setOnMouseExited(event -> {
+//        signalList.setOnMouseExited(event -> {
+////
+//            Transition animation = new Transition() {
+//                {
+//                    setCycleDuration(Duration.millis(200));
+//                }
 //
-            Transition animation = new Transition() {
-                {
-                    setCycleDuration(Duration.millis(200));
-                }
-
-                protected void interpolate(double frac) {
-                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth());
-                }
-
-            };
-
-            animation.play();
-        });
-        signalList.setOnMouseEntered(event -> {
-            Transition animation = new Transition() {
-                {
-                    setCycleDuration(Duration.millis(200));
-                }
-
-                protected void interpolate(double frac) {
-                    signalList.setPrefWidth(frac * 200);
-                }
-
-            };
-
-            animation.play();
-        });
+//                protected void interpolate(double frac) {
+//                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth());
+//                }
+//
+//            };
+//
+//            animation.play();
+//        });
+        signalList.setPrefWidth( 200);
+//        signalList.setOnMouseEntered(event -> {
+//            Transition animation = new Transition() {
+//                {
+//                    setCycleDuration(Duration.millis(200));
+//                }
+//
+//                protected void interpolate(double frac) {
+//                    signalList.setPrefWidth(frac * 200);
+//                }
+//
+//            };
+//
+//            animation.play();
+//        });
         aboutus.setOnAction(e -> {
             aboutUs();
         });
