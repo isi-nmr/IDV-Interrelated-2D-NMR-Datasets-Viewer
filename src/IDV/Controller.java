@@ -11,10 +11,13 @@ import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.*;
@@ -23,6 +26,7 @@ import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
@@ -116,7 +120,8 @@ public class Controller implements Initializable {
     Button openfit;
     @FXML
     TextArea json;
-
+    @FXML
+    Button aboutus;
     private Color color;
     private ArrayList selectedSignals = new ArrayList();
     private int max_slider;
@@ -525,10 +530,26 @@ public class Controller implements Initializable {
 
             animation.play();
         });
+        aboutus.setOnAction(e -> {
+            aboutUs();
+        });
 
 
     }
-
+    public void aboutUs() {
+        FXMLLoader aboutUsDialog = new FXMLLoader(Controller.class.getResource("aboutUs" + ".fxml"));
+        Parent parent = null;
+        try {
+            parent = aboutUsDialog.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Scene scene = new Scene(parent, 600, 600);
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.show();
+    }
     private void initplotter() {
         signalsList = FXCollections.observableArrayList();
         signalsList.add("All");

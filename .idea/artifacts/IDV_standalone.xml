@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="IDV:standalone">
+    <output-path>$PROJECT_DIR$/out/artifacts/IDV_standalone</output-path>
+    <root id="archive" name="IDV.jar">
+      <element id="module-output" name="IDV" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../../forBern/NIfTI-MRS/out/artifacts/NIfTI_MRS_jar_forIDV/NIfTI-MRS.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/wendykierp/JTransforms/3.1/JTransforms-3.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/commons/commons-math3/3.5/commons-math3-3.5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/pl/edu/icm/JLargeArrays/1.5/JLargeArrays-1.5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
