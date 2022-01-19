@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="IDV:forFitAid">
+    <output-path>$PROJECT_DIR$/out/artifacts/IDV_forFitAid</output-path>
+    <root id="archive" name="IDV.jar">
+      <element id="module-output" name="IDV" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
