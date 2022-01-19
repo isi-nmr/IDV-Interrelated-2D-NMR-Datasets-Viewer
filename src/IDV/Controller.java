@@ -273,12 +273,12 @@ public class Controller implements Initializable {
             if (signalList.getSelectionModel().isSelected(0)) {
                 selectedSignals.clear();
                 int max = yArray.length;
-                if((yArray.length)>64) {
-                    max = 64;
+                if((yArray.length)>32) {
+                    max = 32;
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Information Dialog");
                     alert.setHeaderText(null);
-                    alert.setContentText("Only 64 signals can be displayed at a time");
+                    alert.setContentText("Only 32 signals can be displayed at a time");
                     Thread thread = new Thread(() -> {
                         try {
                             // Wait for 5 secs
@@ -300,14 +300,14 @@ public class Controller implements Initializable {
                 }
                 plotter();
             } else {
-                if (signalList.getSelectionModel().getSelectedIndices().size()>64){
+                if (signalList.getSelectionModel().getSelectedIndices().size()>32){
                     selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
-                    if (selectedSignals.size()>64){
-                        selectedSignals.subList(64,selectedSignals.size()).clear();
+                    if (selectedSignals.size()>32){
+                        selectedSignals.subList(32,selectedSignals.size()).clear();
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Information Dialog");
                         alert.setHeaderText(null);
-                        alert.setContentText("Only 64 signals can be displayed at a time");
+                        alert.setContentText("Only 32 signals can be displayed at a time");
                         Thread thread = new Thread(() -> {
                             try {
                                 // Wait for 5 secs
@@ -563,13 +563,14 @@ public class Controller implements Initializable {
         }
         signalList.getItems().setAll(signalsList);
         signalList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        selectedSignals.clear();
         try {
-            if (yArray.length < 50) {
+            if (yArray.length < 32) {
                 for (int i = 0; i < yArray.length; i++) {
                     selectedSignals.add(i);
                 }
             } else {
-                for (int i = 0; i < 50; i++) {
+                for (int i = 0; i < 32; i++) {
                     selectedSignals.add(i);
                 }
             }
