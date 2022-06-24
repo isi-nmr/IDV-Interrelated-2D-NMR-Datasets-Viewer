@@ -2,10 +2,8 @@ package IDV;
 
 
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
-import javafx.geometry.Point2D;
 import javafx.scene.*;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
@@ -452,28 +450,25 @@ public class J3D {
         return label;
     }
     public void plotHoldon(double[] xArray, double[] zArray, double[][] yArray, Color color, ArrayList list){
-//        if ( minY > Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble() ||
-//        maxY < Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble()) {
-//            minY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).min().getAsDouble();
-//            maxY = Arrays.stream(yArray).flatMapToDouble(Arrays::stream).max().getAsDouble();
-//            cofY = Math.abs(maxY - minY);
-//        }
         double numOfSample = xArray.length;
-        double numOfVector = zArray.length;
+        double numOfVector = list.size();
         polylines = new ArrayList<>();
+        AtomicInteger k = new AtomicInteger();
         Group polygrp = new Group();
         list.forEach(vector -> {
             Double[]  Data = new Double[(int) (2 * numOfSample)];
             for(int i=0; i < 2*numOfSample; i=i+2) {
                 Data[i] = Double.valueOf(i/2)*sizeX/numOfSample;
-                Data[i+1] = -(0.5 * ((sizeY/cofY) * yArray[(int)vector][i/2] - ((minY*sizeY)/cofY)));
+                Data[i+1] = -(0.5 * ((sizeY/cofY) * (yArray[(int)vector][i/2]+1e-6) - ((minY*sizeY)/cofY)));
 //                        -1 * yArray[vector][i/2]*sizeX/(2*sizeY);
             }
             Polyline polyline = new Polyline();
             polyline.setStroke(color);
             polyline.setOpacity(50);
             polyline.setTranslateY(0.75 * sizeY);
-            polyline.setTranslateZ(-sizeZ/2 +(int)vector*sizeZ/(numOfVector));
+
+            polyline.setTranslateZ(-sizeZ/2 + k.get() *sizeZ/(numOfVector));
+            k.getAndIncrement();
             polyline.getPoints().addAll(Data);
             polyline.setStrokeWidth(0.5);
             int finalVector = (int)vector;

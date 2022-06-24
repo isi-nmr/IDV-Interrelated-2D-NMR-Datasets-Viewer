@@ -11,10 +11,13 @@ import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.*;
@@ -22,6 +25,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
@@ -73,8 +77,6 @@ public class Controller implements Initializable {
     @FXML
     Slider opacity;
     @FXML
-    RadioButton xy;
-    @FXML
     RadioButton yz;
     @FXML
     RadioButton xz;
@@ -95,7 +97,6 @@ public class Controller implements Initializable {
     CheckBox mag;
     @FXML
     CheckBox ph;
-
 
     @FXML
     TextField from;
@@ -168,7 +169,9 @@ public class Controller implements Initializable {
         heatmap.sethLabel(new Text("frequency"));
         ScrollPane scpane = new ScrollPane();
         scpane.setContent(heatmap.getFrame());
+
         grid_center.add(scpane, 0, 0);
+
         plotChart(heatmap.getRoot());
 
         chart.getChart().setOnContextMenuRequested(event -> chart.getContextMenu().show(anchorPane2, event.getScreenX(), event.getScreenY()));
@@ -191,6 +194,7 @@ public class Controller implements Initializable {
         //
 
         //
+
 
         j3D = new J3D(400, 400, 400);
         j3D.strokewidth = lineWidth.valueProperty();
@@ -233,47 +237,67 @@ public class Controller implements Initializable {
         signalList.setOnMouseClicked(event -> {
             if (signalList.getSelectionModel().isSelected(0)) {
                 selectedSignals.clear();
-                for (int i = 0; i < yArray.length; i++) {
+                int max = yArray.length;
+                if((yArray.length)>32) {
+                    max = 32;
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Information Dialog");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Only 32 signals can be displayed at a time");
+                    Thread thread = new Thread(() -> {
+                        try {
+                            // Wait for 5 secs
+                            Thread.sleep(2000);
+                            if (alert.isShowing()) {
+                                Platform.runLater(() -> alert.close());
+                            }
+                        } catch (Exception exp) {
+                            exp.printStackTrace();
+                        }
+                    });
+                    thread.setDaemon(true);
+                    thread.start();
+                    Optional<ButtonType> result = alert.showAndWait();
+
+                }
+                for (int i = 0; i < max; i++) {
                     selectedSignals.add(i);
                 }
                 plotter();
             } else {
+                if (signalList.getSelectionModel().getSelectedIndices().size()>32){
+                    selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
+                    if (selectedSignals.size()>32){
+                        selectedSignals.subList(32,selectedSignals.size()).clear();
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Information Dialog");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Only 32 signals can be displayed at a time");
+                        Thread thread = new Thread(() -> {
+                            try {
+                                // Wait for 5 secs
+                                Thread.sleep(2000);
+                                if (alert.isShowing()) {
+                                    Platform.runLater(() -> alert.close());
+                                }
+                            } catch (Exception exp) {
+                                exp.printStackTrace();
+                            }
+                        });
+                        thread.setDaemon(true);
+                        thread.start();
+                        Optional<ButtonType> result = alert.showAndWait();
+                    }
+                }
                 selectedSignals = (ArrayList) signalList.getSelectionModel().getSelectedIndices().stream().map(x -> x = (int) x - 1).collect(Collectors.toList());
                 plotter();
             }
 
         });
 
-        from.setOnAction(event -> {
-            try {
-                min_slider = Integer.valueOf(from.getText());
-                if (max_slider > 0 && max_slider > min_slider)
-                    plotter();
-            } catch (NumberFormatException e) {
-            }
-        });
-        to.setOnAction(event -> {
-            try {
-                max_slider = Integer.valueOf(to.getText());
-                if (max_slider < xArray.length && max_slider > min_slider)
-                    plotter();
-            } catch (NumberFormatException e) {
-            }
-        });
+        initplotter();
 
-        xy.setOnAction(e -> {
-            xz.setSelected(false);
-            yz.setSelected(false);
-            if (xy.isSelected()) {
-                j3D.getRotateX().setAngle(89);
-                j3D.getRotateY().setAngle(0);
-            } else {
-                j3D.getRotateX().setAngle(20);
-                j3D.getRotateY().setAngle(-45);
-            }
-        });
         xz.setOnAction(e -> {
-            xy.setSelected(false);
             yz.setSelected(false);
             if (xz.isSelected()) {
                 j3D.getRotateX().setAngle(0);
@@ -285,7 +309,6 @@ public class Controller implements Initializable {
         });
         yz.setOnAction(e -> {
             xz.setSelected(false);
-            xy.setSelected(false);
             if (yz.isSelected()) {
                 j3D.getRotateX().setAngle(0);
                 j3D.getRotateY().setAngle(-89);
@@ -438,42 +461,56 @@ public class Controller implements Initializable {
         dataChoicerTab2.getSelectionModel().select(0);
         dataTypeTab2.setOnAction(event -> heatmapplotter());
         dataTypeTab2.getSelectionModel().select(0);
-        signalList.setOnMouseExited(event -> {
+//        signalList.setOnMouseExited(event -> {
+////
+//            Transition animation = new Transition() {
+//                {
+//                    setCycleDuration(Duration.millis(200));
+//                }
 //
-            Transition animation = new Transition() {
-                {
-                    setCycleDuration(Duration.millis(200));
-                }
-
-                protected void interpolate(double frac) {
-                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth());
-                }
-
-            };
-
-            animation.play();
-        });
-        signalList.setOnMouseEntered(event -> {
-            Transition animation = new Transition() {
-                {
-                    setCycleDuration(Duration.millis(200));
-                }
-
-                protected void interpolate(double frac) {
-                    signalList.setPrefWidth(frac * 200);
-                }
-
-            };
-
-            animation.play();
-        });
-        initplotter();
-        plotter();
-        heatmapplotter();
+//                protected void interpolate(double frac) {
+//                    signalList.setPrefWidth(signalList.getPrefWidth() - frac * signalList.getPrefWidth());
+//                }
+//
+//            };
+//
+//            animation.play();
+//        });
+        signalList.setPrefWidth( 200);
+//        signalList.setOnMouseEntered(event -> {
+//            Transition animation = new Transition() {
+//                {
+//                    setCycleDuration(Duration.millis(200));
+//                }
+//
+//                protected void interpolate(double frac) {
+//                    signalList.setPrefWidth(frac * 200);
+//                }
+//
+//            };
+//
+//            animation.play();
+//        });
+//        aboutus.setOnAction(e -> {
+//            aboutUs();
+//        });
 
 
     }
-
+    public void aboutUs() {
+        FXMLLoader aboutUsDialog = new FXMLLoader(Controller.class.getResource("aboutUs" + ".fxml"));
+        Parent parent = null;
+        try {
+            parent = aboutUsDialog.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Scene scene = new Scene(parent, 600, 600);
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.show();
+    }
     private void initplotter() {
         signalsList = FXCollections.observableArrayList();
         signalsList.add("All");
@@ -486,13 +523,14 @@ public class Controller implements Initializable {
         }
         signalList.getItems().setAll(signalsList);
         signalList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        selectedSignals.clear();
         try {
-            if (yArray.length < 50) {
+            if (yArray.length < 32) {
                 for (int i = 0; i < yArray.length; i++) {
                     selectedSignals.add(i);
                 }
             } else {
-                for (int i = 0; i < 50; i++) {
+                for (int i = 0; i < 32; i++) {
                     selectedSignals.add(i);
                 }
             }
@@ -747,6 +785,7 @@ public class Controller implements Initializable {
 //        else {
 //            holdon = false;
 //        }
+
         if (datacheck.isSelected()) {
             if (freqdomain || ppmunit) {
                 if (re.isSelected()) {
