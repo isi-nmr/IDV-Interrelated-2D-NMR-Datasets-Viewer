@@ -1,5 +1,7 @@
 # Interrelated MRS(NifTi) Datasets Viewer
 
+Developed by Amir Shamaei amirshamaei@isibrno.cz
+
 Copyright (c) 2020 Ústav přístrojové techniky AV ČR, v. v. i.
 
 A Cross-Platform Open-Source tool for Interrelated MRS(NifTi) Datasets visualization.
